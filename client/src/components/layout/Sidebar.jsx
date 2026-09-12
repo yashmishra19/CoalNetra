@@ -2,11 +2,13 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { navItems } from '../../routes';
 import { useApp } from './AppContext';
+import { useAuth } from '../auth/AuthContext';
 import { Flame } from 'lucide-react';
 
 export default function Sidebar() {
   const location = useLocation();
   const { mineContext, navCounts } = useApp();
+  const { logout } = useAuth();
 
   return (
     <aside className="w-[230px] bg-[#0f1218] text-gray-300 flex flex-col shrink-0 min-h-screen border-r border-[#1e2330] select-none">
@@ -101,6 +103,12 @@ export default function Sidebar() {
             </div>
           </div>
         </div>
+        <button
+          onClick={logout}
+          className="text-[12px] text-white/40 hover:text-white/70 cursor-pointer transition mt-2 px-1"
+        >
+          Sign out
+        </button>
       </div>
     </aside>
   );
