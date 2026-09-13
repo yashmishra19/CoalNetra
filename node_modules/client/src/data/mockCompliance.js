@@ -1,0 +1,46 @@
+export const mockComplianceData = {
+  header: {
+    title: 'Compliance & Regulatory Tracker',
+    subtitle: 'Mines Act 1952, Coal Mines Regulations 2017, Environment Clearance (EC), and Consent to Operate (CTO) statutory obligations.',
+  },
+  statCards: [
+    { id: 'compliance-score', title: 'Compliance score', value: '86%', status: 'warning', progress: 86, subtext: 'Target 95%. 8 items due this week' },
+    { id: 'compliant-count', title: 'Compliant', value: '122', secondaryValue: 'of 142 due this cycle', status: 'good', subtext: 'Up from 118 last month' },
+    { id: 'due-soon-count', title: 'Due soon', value: '6', status: 'warning', subtext: 'Within the next 7 days' },
+    { id: 'overdue-count', title: 'Overdue', value: '9', status: 'critical', subtext: '3 are over 7 days late' },
+    { id: 'not-complied-count', title: 'Not complied', value: '5', status: 'critical', subtext: 'Needs immediate corrective action' },
+  ],
+  obligationFilters: [
+    { key: 'all', label: 'All', count: 142 },
+    { key: 'safety', label: 'Safety', count: 68 },
+    { key: 'environment', label: 'Environment', count: 34 },
+    { key: 'labour', label: 'Labour', count: 28 },
+    { key: 'production', label: 'Production', count: 12 },
+  ],
+  obligations: [
+    { id: 'ob-1', category: 'safety', title: 'Written notice of serious accident', location: 'Haul Road North, 9 Sep 22:02', legalRef: 'CMR 2017 Reg 8', legalAct: 'Coal Mines Regulations', frequency: 'Immediate (24h)', owner: 'R. K. Mehato (Mine Mgr)', due: 'Today in 5h', status: 'Due in 5h' },
+    { id: 'ob-2', category: 'production', title: 'Monthly production & safety return', location: 'Form I, II, III', legalRef: 'Mines Act 1952 Sec 48', legalAct: 'Mines Act', frequency: 'Monthly', owner: 'P. Sinha (Planning)', due: '15 Sep 2026', status: 'Due soon' },
+    { id: 'ob-3', category: 'safety', title: 'Slope stability radar review', location: 'Dump-3 active toe', legalRef: 'DGMS Circular 02/2020', legalAct: 'DGMS Standard', frequency: 'Weekly', owner: 'S. Tirkey (Geotech)', due: 'Overdue 2 days', status: 'Overdue 2 days' },
+    { id: 'ob-4', category: 'environment', title: 'Ambient air quality monitoring (PM10/PM2.5)', location: 'AD-2 Sonari village', legalRef: 'EC Condition B-4', legalAct: 'MoEFCC EC', frequency: 'Fortnightly', owner: 'M. Hansda (Env)', due: '14 Sep 2026', status: 'Due soon' },
+    { id: 'ob-5', category: 'safety', title: 'Haul road berm height inspection', location: 'Haul Road North & South', legalRef: 'CMR 2017 Reg 76', legalAct: 'Coal Mines Regulations', frequency: 'Daily', owner: 'A. Kujur (Safety)', due: 'Today 18:00', status: 'Not complied' },
+    { id: 'ob-6', category: 'environment', title: 'Water discharge quality report', location: 'Sump-1 discharge point', legalRef: 'Water Act 1974 Sec 25', legalAct: 'SPCB CTO', frequency: 'Monthly', owner: 'S. Ekka (Env)', due: '18 Sep 2026', status: 'Compliant' },
+    { id: 'ob-7', category: 'labour', title: 'VTC refresher training batch records', location: 'Batch 24-B contractor staff', legalRef: 'Mines Vocational Rules', legalAct: 'MVTR 1966', frequency: 'Quarterly', owner: 'K. Verma (Training)', due: '20 Sep 2026', status: 'On track' },
+    { id: 'ob-8', category: 'safety', title: 'Explosives magazine daily log', location: 'Magazine #1', legalRef: 'Explosives Rules 2008', legalAct: 'PESO Regulations', frequency: 'Daily', owner: 'D. Soren (Blasting)', due: 'Today 20:00', status: 'Compliant' },
+    { id: 'ob-9', category: 'labour', title: 'Quarterly safety committee meeting minutes', location: 'Q2 FY26 Review', legalRef: 'Mines Rules 1955 Rule 29T', legalAct: 'Mines Rules', frequency: 'Quarterly', owner: 'N. Topno (Welfare)', due: 'Overdue 5 days', status: 'Overdue 2 days' },
+    { id: 'ob-10', category: 'safety', title: 'Heavy Earth Moving Machinery (HEMM) fitness certs', location: 'Shovels 1-8, Dumpers 1-34', legalRef: 'CMR 2017 Reg 181', legalAct: 'Coal Mines Regulations', frequency: 'Half-yearly', owner: 'P. Munda (Mechanical)', due: '30 Sep 2026', status: 'Compliant' },
+  ],
+  licences: [
+    { name: 'Environment Clearance (EC) - 4.5 MTPA', remainingText: '45 days', progress: 65, color: 'warning' },
+    { name: 'Consent to Operate (CTO) - Air & Water', remainingText: '62 days', progress: 75, color: 'warning' },
+    { name: 'Mining Lease Renewal (ML-84)', remainingText: 'Mar 2038', progress: 95, color: 'good' },
+    { name: 'Forest Clearance (Stage-II, 120 ha)', remainingText: 'Dec 2029', progress: 90, color: 'good' },
+    { name: 'Explosives Storage & Handling Licence', remainingText: '18 days', progress: 30, color: 'critical' },
+    { name: 'Ground Water Extraction NOC (CGWA)', remainingText: '88 days', progress: 80, color: 'good' },
+  ],
+  regulatorDirections: [
+    { id: 'dir-1', direction: 'Erect 1.5m solid rock berms along all haul roads', issuedBy: 'DGMS Dhanbad Region', issuedDate: '10 Sep 2026', dueDate: '17 Sep 2026', progress: 40, progressColor: 'critical', status: 'In progress' },
+    { id: 'dir-2', direction: 'Install automated PM10 water mist canons at Coal Handling Plant', issuedBy: 'State Pollution Control Board', issuedDate: '28 Aug 2026', dueDate: '25 Sep 2026', progress: 80, progressColor: 'good', status: 'In progress' },
+    { id: 'dir-3', direction: 'Submit geological slope stability model for Dump-3', issuedBy: 'DGMS (Safety & Tech)', issuedDate: '02 Sep 2026', dueDate: '12 Sep 2026', progress: 90, progressColor: 'warning', status: 'Due soon' },
+    { id: 'dir-4', direction: 'Construct peripheral silt settling pond near Sump-1 discharge', issuedBy: 'Ministry of Environment & Forests', issuedDate: '15 Jul 2026', dueDate: '15 Oct 2026', progress: 60, progressColor: 'good', status: 'In progress' },
+  ],
+};
