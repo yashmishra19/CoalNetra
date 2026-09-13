@@ -16,6 +16,10 @@ import RegulatorShell from './components/regulator/RegulatorShell';
 import RegulatorDashboard from './pages/regulator/RegulatorDashboard';
 import MinesRegister from './pages/regulator/MinesRegister';
 import Inspections from './pages/regulator/Inspections';
+import Directions from './pages/regulator/Directions';
+import Accidents from './pages/regulator/Accidents';
+import Permissions from './pages/regulator/Permissions';
+import Assurance from './pages/regulator/Assurance';
 
 export default function App() {
   return (
@@ -98,6 +102,10 @@ export default function App() {
             <Route index element={<RegulatorDashboard />} />
             <Route path="mines-register" element={<MinesRegister />} />
             <Route path="inspections" element={<Inspections />} />
+            <Route path="directions" element={<Directions />} />
+            <Route path="accidents" element={<Accidents />} />
+            <Route path="permissions" element={<Permissions />} />
+            <Route path="assurance" element={<Assurance />} />
           </Route>
 
           {/* Catch-all */}

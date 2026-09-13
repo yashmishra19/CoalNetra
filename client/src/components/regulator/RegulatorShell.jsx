@@ -23,10 +23,10 @@ export default function RegulatorShell() {
     { label: 'Region view', path: '/regulator', end: true, icon: LayoutGrid, count: null },
     { label: 'Mines register', path: '/regulator/mines-register', end: false, icon: Database, count: null },
     { label: 'Inspections', path: '/regulator/inspections', end: false, icon: Search, count: 19, tone: 'critical' },
-    { label: 'Directions', path: '/regulator', end: false, icon: ArrowRightCircle, count: 19, tone: 'critical' },
-    { label: 'Accidents & inquiries', path: '/regulator', end: false, icon: AlertOctagon, count: 2, tone: 'critical' },
-    { label: 'Permissions', path: '/regulator', end: false, icon: FileCheck, count: 8, tone: 'warning' },
-    { label: 'Assurance & reporting', path: '/regulator', end: false, icon: Shield, count: null },
+    { label: 'Directions', path: '/regulator/directions', end: false, icon: ArrowRightCircle, count: 19, tone: 'critical' },
+    { label: 'Accidents & inquiries', path: '/regulator/accidents', end: false, icon: AlertOctagon, count: 2, tone: 'critical' },
+    { label: 'Permissions', path: '/regulator/permissions', end: false, icon: FileCheck, count: 9, tone: 'warning' },
+    { label: 'Assurance & reporting', path: '/regulator/assurance', end: false, icon: Shield, count: null },
   ];
 
   return (
@@ -108,7 +108,9 @@ export default function RegulatorShell() {
                       <span>{item.label}</span>
                     </div>
                     {item.count !== null && (
-                      <span className="min-w-[20px] h-[20px] px-1.5 rounded-full flex items-center justify-center text-[11px] font-bold text-white bg-[#E5484D] ml-auto">
+                      <span className={`min-w-[20px] h-[20px] px-1.5 rounded-full flex items-center justify-center text-[11px] font-bold text-white ${
+                        item.tone === 'warning' ? 'bg-[#D97706]' : 'bg-[#E5484D]'
+                      } ml-auto`}>
                         {item.count}
                       </span>
                     )}
