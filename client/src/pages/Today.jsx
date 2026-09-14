@@ -23,12 +23,13 @@ export default function Today() {
     });
   }, []);
 
-  if (loading || !data) {
+  if (!data) {
     return (
       <PageShell>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-xs text-gray-500 animate-pulse">
-            Loading Today's Mine Telemetry...
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="w-8 h-8 border-2 border-page-border border-t-brand-primary rounded-full animate-spin mx-auto mb-3"></div>
+            <p className="text-sm text-status-neutral">Loading...</p>
           </div>
         </div>
       </PageShell>
@@ -64,12 +65,14 @@ export default function Today() {
         </div>
 
         {/* 1. Alert Banner */}
-        <AlertBanner
-          title={data.alertBanner.title}
-          description={data.alertBanner.description}
-          totalWindow={data.alertBanner.totalWindow}
-          ctaText={data.alertBanner.ctaText}
-        />
+        {data.alertBanner && (
+          <AlertBanner
+            title={data.alertBanner.title}
+            description={data.alertBanner.description}
+            totalWindow={data.alertBanner.totalWindow}
+            ctaText={data.alertBanner.ctaText}
+          />
+        )}
 
         {/* 2. KPI Stat Cards (3x2 Grid) */}
         <StatCardGrid stats={data.kpiStats} />
