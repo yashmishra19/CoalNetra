@@ -35,12 +35,13 @@ export default function Compliance() {
     getObligations(key).then(setObligations);
   };
 
-  if (loading || !data) {
+  if (!data) {
     return (
       <PageShell>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-xs text-gray-500 animate-pulse">
-            Loading Compliance & Statutory Obligations...
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="w-8 h-8 border-2 border-page-border border-t-brand-primary rounded-full animate-spin mx-auto mb-3"></div>
+            <p className="text-sm text-status-neutral">Loading...</p>
           </div>
         </div>
       </PageShell>

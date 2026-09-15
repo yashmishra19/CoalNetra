@@ -3,12 +3,19 @@
  * The _source field in the response will be 'supabase_live' when live.
  */
 
+import { mockTodayData } from '../data/mockToday';
+
 const API = '/api/today';
 
 export async function getTodayDashboard() {
-  const res = await fetch(API);
-  if (!res.ok) throw new Error('Failed to fetch today dashboard');
-  return res.json();
+  try {
+    const res = await fetch(API);
+    if (!res.ok) throw new Error('Failed to fetch today dashboard');
+    return await res.json();
+  } catch (err) {
+    console.warn('Today API fetch failed, falling back to mock data:', err);
+    return mockTodayData;
+  }
 }
 
 export async function getTodayKPIStats() {

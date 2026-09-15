@@ -23,19 +23,13 @@ export default function Assurance() {
       });
   }, []);
 
-  if (loading) {
+  if (!data) {
     return (
-      <div className="flex items-center justify-center py-24 text-status-neutral gap-3">
-        <Loader2 className="animate-spin" size={24} />
-        <span className="text-[14px]">Loading assurance & reporting data...</span>
-      </div>
-    );
-  }
-
-  if (error || !data) {
-    return (
-      <div className="py-12 text-center text-status-critical text-[14px]">
-        {error || 'Unable to load assurance & reporting data.'}
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-page-border border-t-brand-primary rounded-full animate-spin mx-auto mb-3"></div>
+          <p className="text-sm text-status-neutral">Loading...</p>
+        </div>
       </div>
     );
   }

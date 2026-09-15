@@ -1,0 +1,6 @@
+google-genai
+pdfplumber
+pydantic
+pymupdf
+python-dotenv
+requests
