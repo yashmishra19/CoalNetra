@@ -38,26 +38,25 @@ export default function Today() {
 
   return (
     <PageShell>
-      <div className="space-y-4 pb-12">
+      <div className="space-y-8 pb-12">
         {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
           <div>
-            <h1 className="text-lg font-bold text-gray-950 tracking-tight">
+            <h1 className="text-[26px] font-bold text-brand-primary tracking-tight">
               {data.header.title}
             </h1>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-[14px] text-status-neutral mt-1">
               {data.header.subtitle}
             </p>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            <Button variant="secondary" size="sm" className="text-xs font-medium">
+          <div className="flex items-center gap-3 shrink-0">
+            <Button variant="secondary" className="text-[13px] font-medium">
               Read Shift A handover
             </Button>
             <Button
-              variant="dark-blue"
-              size="sm"
-              className="text-xs font-semibold bg-[#1b3252] hover:bg-[#14263f]"
+              variant="primary"
+              className="text-[13px] font-semibold"
             >
               Plan an inspection
             </Button>
@@ -78,7 +77,7 @@ export default function Today() {
         <StatCardGrid stats={data.kpiStats} />
 
         {/* 3. Main Operational Row: Decisions (Left) & Risk Map (Right) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
           <div className="lg:col-span-7 xl:col-span-8 flex">
             <DecisionList decisions={data.decisions} />
           </div>
@@ -103,7 +102,7 @@ export default function Today() {
         <FieldFeedWidget feed={data.fieldFeed} />
 
         {/* Footer Disclaimer Note */}
-        <div className="pt-2 text-center sm:text-left text-[11px] text-gray-400">
+        <div className="pt-2 text-center sm:text-left text-[12px] text-status-neutral italic">
           {data.footerDisclaimer}
         </div>
       </div>

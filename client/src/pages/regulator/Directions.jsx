@@ -73,7 +73,7 @@ export default function Directions() {
       {/* PAGE HEADER */}
       <div className="mt-2 flex flex-col md:flex-row md:items-start justify-between gap-4">
         <div>
-          <h1 className="text-[28px] font-bold text-brand-primary tracking-tight">
+          <h1 className="text-[26px] font-bold text-brand-primary tracking-tight">
             {header.title}
           </h1>
           <p className="mt-1 text-[14px] text-status-neutral leading-relaxed max-w-[600px]">
@@ -91,25 +91,33 @@ export default function Directions() {
       </div>
 
       {/* KPI ROW */}
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+      <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         {kpis &&
           kpis.map((kpi) => (
             <div key={kpi.id} className="bg-white border border-page-border rounded-xl p-5 flex flex-col justify-between">
-              <div className="flex items-baseline">
-                <span className="text-[36px] font-bold text-brand-primary leading-none">
-                  {kpi.value}
-                </span>
-                {kpi.suffix && (
-                  <span className="text-[16px] text-status-neutral font-medium ml-1">
-                    {kpi.suffix}
+              <div>
+                <div className="text-[12px] font-semibold uppercase tracking-wider text-status-neutral flex items-center">
+                  {kpi.dot === 'critical' && (
+                    <span className="w-2 h-2 rounded-full bg-status-critical inline-block mr-1.5" />
+                  )}
+                  {kpi.dot === 'warning' && (
+                    <span className="w-2 h-2 rounded-full bg-status-warning inline-block mr-1.5" />
+                  )}
+                  {kpi.label}
+                </div>
+                <div className="mt-2 flex items-baseline">
+                  <span className="text-[30px] font-bold text-brand-primary leading-none">
+                    {kpi.value}
                   </span>
-                )}
+                  {kpi.suffix && (
+                    <span className="text-[14px] text-status-neutral font-medium ml-1">
+                      {kpi.suffix}
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="mt-2 text-[13px] text-status-neutral leading-snug">
-                {kpi.dot === 'critical' && (
-                  <span className="w-2 h-2 rounded-full bg-status-critical inline-block mr-1.5 relative -top-[1px]" />
-                )}
-                {kpi.label}
+              <div className="mt-1 text-[12px] text-status-neutral leading-snug">
+                {kpi.detail}
               </div>
             </div>
           ))}

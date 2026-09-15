@@ -49,7 +49,7 @@ export default function Assurance() {
       {/* PAGE HEADER */}
       <div className="mt-2 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
-          <h1 className="text-[28px] font-bold text-brand-primary tracking-tight">
+          <h1 className="text-[26px] font-bold text-brand-primary tracking-tight">
             {header.title}
           </h1>
           <p className="mt-1 text-[14px] text-status-neutral leading-relaxed max-w-[600px]">
@@ -60,14 +60,14 @@ export default function Assurance() {
           <button className="border border-page-border rounded-lg px-4 py-2.5 text-[13px] font-medium text-brand-primary hover:bg-page-bg transition cursor-pointer">
             Run integrity check
           </button>
-          <button className="bg-brand-primary text-white rounded-lg px-5 py-2.5 text-[13px] font-semibold hover:bg-brand-dark transition cursor-pointer">
+          <button className="bg-brand-primary text-white rounded-lg px-4 py-2.5 text-[13px] font-semibold hover:bg-brand-dark transition cursor-pointer">
             Build monthly return
           </button>
         </div>
       </div>
 
       {/* TOP SECTION */}
-      <div className="mt-6 grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-6 items-start">
+      <div className="mt-8 grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-6 items-start">
         {/* LEFT — Provenance card */}
         <div className="bg-white border border-page-border rounded-xl p-6">
           <div className="flex items-center gap-3 mb-4">

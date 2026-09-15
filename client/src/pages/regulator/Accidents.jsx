@@ -57,7 +57,7 @@ export default function Accidents() {
       {/* PAGE HEADER */}
       <div className="mt-2 flex flex-col md:flex-row md:items-start justify-between gap-4">
         <div>
-          <h1 className="text-[28px] font-bold text-brand-primary tracking-tight">
+          <h1 className="text-[26px] font-bold text-brand-primary tracking-tight">
             {header.title}
           </h1>
           <p className="mt-1 text-[14px] text-status-neutral leading-relaxed max-w-[600px]">
@@ -68,20 +68,19 @@ export default function Accidents() {
           <button className="border border-page-border rounded-lg px-4 py-2.5 text-[13px] font-medium text-brand-primary hover:bg-page-bg transition cursor-pointer whitespace-nowrap">
             Push to national portal
           </button>
-          <button className="bg-status-critical text-white rounded-lg px-5 py-2.5 text-[13px] font-semibold hover:bg-status-critical-dark transition cursor-pointer whitespace-nowrap">
+          <button className="bg-status-critical text-white rounded-lg px-4 py-2.5 text-[13px] font-semibold hover:bg-status-critical-dark transition cursor-pointer whitespace-nowrap">
             Open a court of inquiry
           </button>
         </div>
       </div>
 
       {/* KPI ROW */}
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+      <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {kpis &&
           kpis.map((kpi) => (
-            <div key={kpi.id} className="bg-white border border-page-border rounded-xl p-4 flex flex-col justify-between">
+            <div key={kpi.id} className="bg-white border border-page-border rounded-xl p-5 flex flex-col justify-between">
               <div>
-                <div className={`h-1 rounded-full w-12 mb-3 ${getBarColorClass(kpi.barColor)}`} />
-                <div className="text-[11px] font-semibold uppercase tracking-wider text-status-neutral">
+                <div className="text-[12px] font-semibold uppercase tracking-wider text-status-neutral">
                   {kpi.label}
                 </div>
                 <div className="mt-2 flex items-baseline gap-1.5">
@@ -96,7 +95,7 @@ export default function Accidents() {
                 </div>
               </div>
               {kpi.detail && (
-                <div className="mt-2 text-[12px] text-status-neutral leading-snug">
+                <div className="mt-1 text-[12px] text-status-neutral leading-snug">
                   {kpi.detail}
                 </div>
               )}

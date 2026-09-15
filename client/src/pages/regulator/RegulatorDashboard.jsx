@@ -139,14 +139,14 @@ export default function RegulatorDashboard() {
       )}
 
       {/* KPI ROW */}
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {kpis &&
           kpis.map((kpi) => {
             const isCritical = kpi.tone === 'critical';
             return (
-              <div key={kpi.id} className="bg-white border border-page-border rounded-xl p-4 flex flex-col justify-between">
+              <div key={kpi.id} className="bg-white border border-page-border rounded-xl p-5 flex flex-col justify-between">
                 <div>
-                  <div className="text-[11px] font-semibold uppercase tracking-wider text-status-neutral">
+                  <div className="text-[12px] font-semibold uppercase tracking-wider text-status-neutral">
                     {kpi.label}
                   </div>
                   <div className="mt-2 flex items-baseline gap-1.5">
@@ -160,7 +160,7 @@ export default function RegulatorDashboard() {
                     )}
                   </div>
                 </div>
-                <div className="mt-2 text-[12px] text-status-neutral leading-snug">
+                <div className="mt-1 text-[12px] text-status-neutral leading-snug">
                   {kpi.detail}
                 </div>
               </div>
@@ -211,47 +211,47 @@ export default function RegulatorDashboard() {
           <table className="w-full min-w-[750px] border-collapse">
             <thead>
               <tr className="bg-page-bg border-b border-page-border">
-                <th className="text-[11px] font-semibold uppercase tracking-wider text-status-neutral py-3 px-4 text-left">OPERATOR</th>
-                <th className="text-[11px] font-semibold uppercase tracking-wider text-status-neutral py-3 px-4 text-left">TYPE</th>
-                <th className="text-[11px] font-semibold uppercase tracking-wider text-status-neutral py-3 px-4 text-center">MINES</th>
-                <th className="text-[11px] font-semibold uppercase tracking-wider text-status-neutral py-3 px-4 text-center">INSPECTED</th>
-                <th className="text-[11px] font-semibold uppercase tracking-wider text-status-neutral py-3 px-4 text-center">FATAL</th>
-                <th className="text-[11px] font-semibold uppercase tracking-wider text-status-neutral py-3 px-4 text-center">SERIOUS</th>
-                <th className="text-[11px] font-semibold uppercase tracking-wider text-status-neutral py-3 px-4 text-center">DIR. OPEN</th>
-                <th className="text-[11px] font-semibold uppercase tracking-wider text-status-neutral py-3 px-4 text-center">OVERDUE</th>
-                <th className="text-[11px] font-semibold uppercase tracking-wider text-status-neutral py-3 px-4 text-right">RETURNS</th>
+                <th className="text-[11px] font-semibold uppercase tracking-wider text-status-neutral py-3 px-5 text-left">OPERATOR</th>
+                <th className="text-[11px] font-semibold uppercase tracking-wider text-status-neutral py-3 px-5 text-left">TYPE</th>
+                <th className="text-[11px] font-semibold uppercase tracking-wider text-status-neutral py-3 px-5 text-center">MINES</th>
+                <th className="text-[11px] font-semibold uppercase tracking-wider text-status-neutral py-3 px-5 text-center">INSPECTED</th>
+                <th className="text-[11px] font-semibold uppercase tracking-wider text-status-neutral py-3 px-5 text-center">FATAL</th>
+                <th className="text-[11px] font-semibold uppercase tracking-wider text-status-neutral py-3 px-5 text-center">SERIOUS</th>
+                <th className="text-[11px] font-semibold uppercase tracking-wider text-status-neutral py-3 px-5 text-center">DIR. OPEN</th>
+                <th className="text-[11px] font-semibold uppercase tracking-wider text-status-neutral py-3 px-5 text-center">OVERDUE</th>
+                <th className="text-[11px] font-semibold uppercase tracking-wider text-status-neutral py-3 px-5 text-right">RETURNS</th>
               </tr>
             </thead>
             <tbody>
               {operators &&
                 operators.map((op) => (
                   <tr key={op.id} className="border-t border-page-border hover:bg-page-bg/50 transition-colors cursor-pointer">
-                    <td className="py-4 px-4 text-[14px]">
+                    <td className="py-3.5 px-5 text-[14px]">
                       <div className="font-medium text-brand-primary">{op.name}</div>
                       <div className="text-[12px] text-status-neutral">{op.subtitle}</div>
                     </td>
-                    <td className="py-4 px-4 text-[14px] text-status-neutral">
+                    <td className="py-3.5 px-5 text-[14px] text-status-neutral">
                       {op.type}
                     </td>
-                    <td className="py-4 px-4 text-[14px] text-brand-primary text-center">
+                    <td className="py-3.5 px-5 text-[14px] text-brand-primary text-center">
                       {op.mines}
                     </td>
-                    <td className={`py-4 px-4 text-[14px] text-center ${getInspectedColor(op.inspected)}`}>
+                    <td className={`py-3.5 px-5 text-[14px] text-center ${getInspectedColor(op.inspected)}`}>
                       {op.inspected}
                     </td>
-                    <td className={`py-4 px-4 text-[14px] text-center ${op.fatal > 0 ? 'text-status-critical font-semibold' : 'text-status-neutral'}`}>
+                    <td className={`py-3.5 px-5 text-[14px] text-center ${op.fatal > 0 ? 'text-status-critical font-semibold' : 'text-status-neutral'}`}>
                       {op.fatal}
                     </td>
-                    <td className="py-4 px-4 text-[14px] text-brand-primary text-center">
+                    <td className="py-3.5 px-5 text-[14px] text-brand-primary text-center">
                       {op.serious}
                     </td>
-                    <td className="py-4 px-4 text-[14px] text-brand-primary text-center">
+                    <td className="py-3.5 px-5 text-[14px] text-brand-primary text-center">
                       {op.dirOpen}
                     </td>
-                    <td className={`py-4 px-4 text-[14px] text-center ${op.overdue > 2 ? 'text-status-critical font-semibold' : 'text-brand-primary'}`}>
+                    <td className={`py-3.5 px-5 text-[14px] text-center ${op.overdue > 2 ? 'text-status-critical font-semibold' : 'text-brand-primary'}`}>
                       {op.overdue}
                     </td>
-                    <td className="py-4 px-4 text-[13px] text-right">
+                    <td className="py-3.5 px-5 text-[14px] text-right">
                       {getReturnsPill(op.returnsTone, op.returns)}
                     </td>
                   </tr>
@@ -269,7 +269,7 @@ export default function RegulatorDashboard() {
       {/* ============================================================ */}
       {/* SECTION 1: Inspector Priorities + Data Reliability            */}
       {/* ============================================================ */}
-      <div className="mt-10 grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-6 items-start">
+      <div className="mt-8 grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-6 items-start">
 
         {/* LEFT — Where to send inspectors */}
         <div className="bg-white border border-page-border rounded-xl p-5">
@@ -362,7 +362,7 @@ export default function RegulatorDashboard() {
       {/* ============================================================ */}
       {/* SECTION 2: Directions awaiting compliance                    */}
       {/* ============================================================ */}
-      <div className="mt-10 bg-white border border-page-border rounded-xl overflow-hidden">
+      <div className="mt-8 bg-white border border-page-border rounded-xl overflow-hidden">
         {/* Header */}
         <div className="px-5 pt-5 pb-4 flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3 flex-wrap">
@@ -465,7 +465,7 @@ export default function RegulatorDashboard() {
       {/* ============================================================ */}
       {/* SECTION 3: Notices received + District map                   */}
       {/* ============================================================ */}
-      <div className="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
         {/* LEFT — Notices received */}
         <div className="bg-white border border-page-border rounded-xl p-5">

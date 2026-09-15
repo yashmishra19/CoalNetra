@@ -52,7 +52,7 @@ export default function MinesRegister() {
       {/* PAGE HEADER */}
       <div className="mt-2 flex flex-col md:flex-row md:items-start justify-between gap-4">
         <div>
-          <h1 className="text-[28px] font-bold text-brand-primary tracking-tight">
+          <h1 className="text-[26px] font-bold text-brand-primary tracking-tight">
             {header.title}
           </h1>
           <p className="mt-1 text-[14px] text-status-neutral leading-relaxed max-w-[600px]">
@@ -63,25 +63,27 @@ export default function MinesRegister() {
           <button className="border border-page-border rounded-lg px-4 py-2.5 text-[13px] font-medium text-brand-primary hover:bg-page-bg transition cursor-pointer whitespace-nowrap">
             Add an unregistered mine
           </button>
-          <button className="bg-status-critical text-white rounded-lg px-5 py-2.5 text-[13px] font-semibold hover:bg-status-critical-dark transition cursor-pointer whitespace-nowrap">
+          <button className="bg-brand-primary text-white rounded-lg px-4 py-2.5 text-[13px] font-semibold hover:bg-brand-dark transition cursor-pointer whitespace-nowrap">
             Export register
           </button>
         </div>
       </div>
 
       {/* KPI ROW */}
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+      <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         {kpis &&
           kpis.map((kpi) => (
             <div key={kpi.id} className="bg-white border border-page-border rounded-xl p-5 flex flex-col justify-between">
-              <div className="text-[36px] font-bold text-brand-primary leading-none">
-                {kpi.value}
-              </div>
-              <div className="mt-2 text-[13px] text-status-neutral leading-snug">
-                {kpi.dot === 'critical' && (
-                  <span className="w-2 h-2 rounded-full inline-block mr-1.5 relative -top-[1px] bg-status-critical" />
-                )}
-                {kpi.label}
+              <div>
+                <div className="text-[12px] font-semibold uppercase tracking-wider text-status-neutral flex items-center">
+                  {kpi.dot === 'critical' && (
+                    <span className="w-2 h-2 rounded-full inline-block mr-1.5 bg-status-critical" />
+                  )}
+                  {kpi.label}
+                </div>
+                <div className="mt-2 text-[30px] font-bold text-brand-primary leading-none">
+                  {kpi.value}
+                </div>
               </div>
             </div>
           ))}
@@ -92,7 +94,7 @@ export default function MinesRegister() {
         {/* Header row */}
         <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
           <div className="flex items-center gap-3 flex-wrap">
-            <h2 className="text-xl font-semibold text-brand-primary">Register</h2>
+            <h2 className="text-lg font-semibold text-brand-primary">Register</h2>
             <span className="text-[13px] text-status-neutral italic">
               {registerMeta}
             </span>

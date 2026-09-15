@@ -10,14 +10,14 @@ export default function DataTable({
   emptyMessage = 'No records found',
 }) {
   return (
-    <div className={`w-full overflow-x-auto ${className}`}>
-      <table className="w-full text-left text-xs border-collapse">
+    <div className={`w-full bg-white border border-page-border rounded-xl overflow-hidden overflow-x-auto ${className}`}>
+      <table className="w-full text-left border-collapse">
         <thead>
-          <tr className="border-b border-gray-200 bg-gray-50/50 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+          <tr className="bg-page-bg border-b border-page-border">
             {columns.map((col) => (
               <th
                 key={col.key}
-                className={`py-2 px-3 ${
+                className={`py-3 px-5 text-[11px] font-semibold uppercase tracking-wider text-status-neutral ${
                   col.align === 'right'
                     ? 'text-right'
                     : col.align === 'center'
@@ -30,12 +30,12 @@ export default function DataTable({
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody>
           {data.length === 0 ? (
             <tr>
               <td
                 colSpan={columns.length}
-                className="py-6 text-center text-xs text-gray-500 italic"
+                className="py-6 px-5 text-center text-[14px] text-status-neutral italic"
               >
                 {emptyMessage}
               </td>
@@ -49,17 +49,15 @@ export default function DataTable({
                 <tr
                   key={rowKey}
                   onClick={() => onRowClick && onRowClick(row)}
-                  className={`transition-colors ${
-                    isSelected
-                      ? 'bg-blue-50/70 border-l-2 border-l-blue-600 font-medium'
-                      : 'hover:bg-gray-50/60'
+                  className={`border-t border-page-border transition-colors hover:bg-page-bg/50 ${
+                    isSelected ? 'bg-status-info-bg font-medium' : ''
                   } ${onRowClick ? 'cursor-pointer' : ''}`}
                 >
                   {columns.map((col) => {
                     return (
                       <td
                         key={col.key}
-                        className={`py-2.5 px-3 text-xs align-middle ${
+                        className={`py-3.5 px-5 text-[14px] align-middle ${
                           col.align === 'right'
                             ? 'text-right'
                             : col.align === 'center'
@@ -70,7 +68,7 @@ export default function DataTable({
                         {col.render ? (
                           col.render(row, idx)
                         ) : (
-                          <div className="text-gray-900 leading-snug">
+                          <div className="text-brand-primary leading-snug">
                             {row[col.key]}
                           </div>
                         )}
@@ -86,3 +84,4 @@ export default function DataTable({
     </div>
   );
 }
+
