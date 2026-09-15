@@ -1,83 +1,56 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // Brand Colors
-  static const Color absoluteBlack = Color(0xFF1E2129); // Web Sidebar Blue-Black
-  static const Color nearBlackCoal = Color(0xFF111827); // Dark Text
-  static const Color offWhiteBackground = Color(0xFFF3F4F6); // Greyish background
+  // Brand Colors matching the prototype
+  static const Color graphite = Color(0xFF1E2A31);
+  static const Color graphite2 = Color(0xFF2B3A43);
+  static const Color graphite3 = Color(0xFF3A4B55);
   
-  // Accents & Semantics
-  static const Color amberAccent = Color(0xFFD97706); // Warning
-  static const Color greenVerified = Color(0xFF059669); // Success
-  static const Color redDanger = Color(0xFFDC2626); // Alert
-  static const Color cobaltBlue = Color(0xFF2563EB); // Primary Action Blue
-  static const Color borderGrey = Color(0xFFE5E7EB);
+  static const Color paper = Color(0xFFECEFEC);
+  static const Color panel = Color(0xFFFFFFFF);
+
+  static const Color ink = Color(0xFF1E2A31);
+  static const Color ink2 = Color(0xFF55636B);
+  static const Color ink3 = Color(0xFF7A868C);
+
+  static const Color steel = Color(0xFF2F5D7C);
+  static const Color steelBg = Color(0xFFE4EDF3);
+
+  static const Color redDanger = Color(0xFFB8322A);
+  static const Color redBg = Color(0xFFFBEAE8);
+
+  static const Color amberAccent = Color(0xFFE0A21A);
+  static const Color amberBg = Color(0xFFFCF2DA);
+
+  static const Color greenVerified = Color(0xFF2F7A4A);
+  static const Color greenBg = Color(0xFFE4F1E8);
+
+  static const Color line = Color(0xFFD3D9D5);
+  static const Color lineSoft = Color(0xFFE6EAE7);
 
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
-      scaffoldBackgroundColor: offWhiteBackground,
+      scaffoldBackgroundColor: paper,
       colorScheme: const ColorScheme.light(
-        primary: absoluteBlack,
-        secondary: amberAccent,
-        surface: offWhiteBackground,
+        primary: graphite,
+        secondary: steel,
+        surface: panel,
         onPrimary: Colors.white,
-        onSecondary: nearBlackCoal,
-        onSurface: nearBlackCoal,
+        onSecondary: Colors.white,
+        onSurface: ink,
         error: redDanger,
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: absoluteBlack,
-        foregroundColor: offWhiteBackground,
+        backgroundColor: graphite,
+        foregroundColor: Colors.white,
         elevation: 0,
-        centerTitle: true,
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: amberAccent,
-          foregroundColor: nearBlackCoal,
-          textStyle: const TextStyle(fontWeight: FontWeight.bold),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-      ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: amberAccent,
-        foregroundColor: nearBlackCoal,
+        centerTitle: false,
       ),
       textTheme: const TextTheme(
-        displayLarge: TextStyle(color: nearBlackCoal, fontWeight: FontWeight.bold),
-        displayMedium: TextStyle(color: nearBlackCoal, fontWeight: FontWeight.bold),
-        displaySmall: TextStyle(color: nearBlackCoal, fontWeight: FontWeight.bold),
-        headlineLarge: TextStyle(color: nearBlackCoal, fontWeight: FontWeight.bold),
-        headlineMedium: TextStyle(color: nearBlackCoal, fontWeight: FontWeight.bold),
-        headlineSmall: TextStyle(color: nearBlackCoal, fontWeight: FontWeight.bold),
-        titleLarge: TextStyle(color: nearBlackCoal, fontWeight: FontWeight.w600),
-        titleMedium: TextStyle(color: nearBlackCoal, fontWeight: FontWeight.w600),
-        titleSmall: TextStyle(color: nearBlackCoal, fontWeight: FontWeight.w600),
-        bodyLarge: TextStyle(color: nearBlackCoal),
-        bodyMedium: TextStyle(color: nearBlackCoal),
-        bodySmall: TextStyle(color: nearBlackCoal),
-        labelLarge: TextStyle(color: nearBlackCoal, fontWeight: FontWeight.w500),
-        labelMedium: TextStyle(color: nearBlackCoal, fontWeight: FontWeight.w500),
-        labelSmall: TextStyle(color: nearBlackCoal, fontWeight: FontWeight.w500),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: nearBlackCoal, width: 1),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: nearBlackCoal.withAlpha(76), width: 1),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: amberAccent, width: 2),
-        ),
+        bodyLarge: TextStyle(color: ink, fontFamily: 'Barlow'),
+        bodyMedium: TextStyle(color: ink, fontFamily: 'Barlow'),
+        titleLarge: TextStyle(color: ink, fontWeight: FontWeight.bold, fontFamily: 'Barlow Semi Condensed'),
       ),
     );
   }

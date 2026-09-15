@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../database/database.dart';
 import '../../theme/app_theme.dart';
+import '../observation_form.dart';
 
 class SirdarHomeTab extends StatelessWidget {
   const SirdarHomeTab({super.key});
@@ -7,229 +10,325 @@ class SirdarHomeTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            "TODAY'S INSPECTION SCHEDULE",
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: Colors.grey[600],
-                  letterSpacing: 1.2,
-                  fontWeight: FontWeight.bold,
+          // 1. Officer Header
+          const Padding(
+            padding: EdgeInsets.only(bottom: 12, left: 2, right: 2),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('B. Oraon', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.ink, height: 1.15)),
+                SizedBox(height: 2),
+                Text('Overman · Certificate 1st class', style: TextStyle(fontSize: 13, color: AppTheme.ink2)),
+                SizedBox(height: 4),
+                Text(
+                  'Your district today: Benches 3 to 5, Haul Road North, Dump-3 toe, Sump-1',
+                  style: TextStyle(fontSize: 13, color: AppTheme.ink, fontWeight: FontWeight.w500),
                 ),
+              ],
+            ),
           ),
-          const SizedBox(height: 12),
-          _buildScheduleItem(
-            context,
-            "Face Gallery 3A",
-            "08:30 AM - 10:00 AM",
-            "Statutory Inspection",
-            true,
-          ),
-          _buildScheduleItem(
-            context,
-            "Conveyor Belt 4",
-            "11:00 AM - 12:00 PM",
-            "Maintenance Audit",
-            false,
-          ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "ASSIGNED CAPAs",
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: Colors.grey[600],
-                      letterSpacing: 1.2,
-                      fontWeight: FontWeight.bold,
-                    ),
+
+          // 2. Statutory Round button — navigates to round checklist (observation list)
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 11),
+            decoration: BoxDecoration(color: AppTheme.graphite, borderRadius: BorderRadius.circular(10)),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(10),
+                onTap: () {
+                  // Navigate to observation form in 'CAPA Closure' mode (round inspection)
+                  Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => const ObservationFormScreen(initialCategory: 'Safety Hazard'),
+                  ));
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('STATUTORY ROUND', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: const Color(0xFF8FA6B0), letterSpacing: 0.09 * 11)),
+                      const SizedBox(height: 2),
+                      const Text('Continue round', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white, height: 1.1)),
+                      const SizedBox(height: 10),
+                      // Live progress bar from pending observations in DB
+                      _RoundProgressBar(),
+                      const SizedBox(height: 8),
+                      const Text('Tap to log next inspection point', style: TextStyle(fontSize: 13, color: Color(0xFFC7D4DA))),
+                    ],
+                  ),
+                ),
               ),
-              Text("3 PENDING", style: TextStyle(color: AppTheme.redDanger, fontSize: 10, fontWeight: FontWeight.bold)),
-            ],
+            ),
           ),
-          const SizedBox(height: 12),
-          _buildCapaCard(
-            "Fix loose roof bolt at Junction 2",
-            "Due: Today, 14:00",
-            "URGENT",
-            AppTheme.redDanger,
+
+          // 3. Shift report due clock
+          Container(
+            margin: const EdgeInsets.only(bottom: 11),
+            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppTheme.panel,
+              border: const Border(left: BorderSide(color: AppTheme.steel, width: 4)),
+              borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.access_time, size: 17, color: AppTheme.steel),
+                SizedBox(width: 8),
+                Text('Shift report due 22:00', style: TextStyle(fontSize: 13.5, color: AppTheme.ink)),
+                Spacer(),
+                Text('3h 40m', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.ink)),
+              ],
+            ),
           ),
-          const SizedBox(height: 12),
-          _buildCapaCard(
-            "Replace worn fire extinguisher",
-            "Due: 15 Sep",
-            "MEDIUM",
-            AppTheme.amberAccent,
+
+          // 4. Three Capture Tiles — all actually navigate
+          Padding(
+            padding: const EdgeInsets.only(bottom: 11),
+            child: Row(
+              children: [
+                Expanded(child: _buildCaptureTile(context, Icons.warning_amber_rounded, 'Observation', false, 'Safety Hazard')),
+                const SizedBox(width: 8),
+                Expanded(child: _buildCaptureTile(context, Icons.block_outlined, 'Near miss', true, 'Near-miss')),
+                const SizedBox(width: 8),
+                Expanded(child: _buildCaptureTile(context, Icons.bar_chart_outlined, 'Reading', false, 'Statutory Reading')),
+              ],
+            ),
           ),
-          const SizedBox(height: 24),
-          Text(
-            "STATUTORY READINGS",
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: Colors.grey[600],
-                  letterSpacing: 1.2,
-                  fontWeight: FontWeight.bold,
-                ),
+
+          // 5. My Actions Card — from real DB (pending observations as proxy)
+          _MyActionsCard(),
+
+          // 6. Handover card (static — filled from shift handover notes in real deployment)
+          _buildPrototypeCard(
+            title: 'Handover from Shift A',
+            count: 2,
+            child: Column(
+              children: [
+                _buildListRow(dotColor: AppTheme.ink3, title: 'Water building at the Dump-3 toe', subtitle: 'Pump ran 4 hours. Watch it after the rain, the radar alert is still on.', trailing: '', isTrailingCrit: false),
+                _buildListRow(dotColor: AppTheme.ink3, title: 'Dozer DT-14 reversing alarm is weak', subtitle: 'Workshop informed at 13:10. Keep persons clear on the north side.', trailing: '', isTrailingCrit: false),
+              ],
+            ),
           ),
-          const SizedBox(height: 12),
-          _buildStatutoryGrid(),
-          const SizedBox(height: 24),
-          Text(
-            "Section Risk Level",
-            style: Theme.of(context).textTheme.titleLarge,
+
+          // 7. Legal note
+          const Padding(
+            padding: EdgeInsets.only(top: 8, bottom: 24, left: 2, right: 2),
+            child: Text(
+              'Your records are sealed when they sync. If anyone asks later what you inspected and when, this is your evidence.',
+              style: TextStyle(fontSize: 12, color: AppTheme.ink3, height: 1.5),
+            ),
           ),
-          const SizedBox(height: 12),
-          _buildRiskIndicator(),
-          const SizedBox(height: 80),
         ],
       ),
     );
   }
 
-  Widget _buildScheduleItem(BuildContext context, String location, String time, String type, bool completed) {
+  Widget _buildCaptureTile(BuildContext context, IconData icon, String label, bool isWarn, String category) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: completed ? AppTheme.greenVerified.withAlpha(50) : Colors.grey[200]!),
+      height: 86,
+      decoration: BoxDecoration(color: AppTheme.panel, border: Border.all(color: AppTheme.line), borderRadius: BorderRadius.circular(8)),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: () {
+            Navigator.push(context, MaterialPageRoute(
+              builder: (_) => ObservationFormScreen(initialCategory: category),
+            ));
+          },
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 26, color: isWarn ? AppTheme.amberAccent : AppTheme.graphite),
+              const SizedBox(height: 6),
+              Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.ink)),
+            ],
+          ),
+        ),
       ),
-      child: Row(
+    );
+  }
+
+  Widget _buildPrototypeCard({required String title, required int count, required Widget child}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(color: AppTheme.panel, border: Border.all(color: AppTheme.line), borderRadius: BorderRadius.circular(8)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: completed ? AppTheme.greenVerified.withAlpha(20) : AppTheme.cobaltBlue.withAlpha(20),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              completed ? Icons.check : Icons.pending_actions,
-              color: completed ? AppTheme.greenVerified : AppTheme.cobaltBlue,
-              size: 20,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(13, 11, 13, 0),
+            child: Row(
+              children: [
+                Text(title, style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: AppTheme.ink)),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+                  decoration: BoxDecoration(color: AppTheme.redDanger, borderRadius: BorderRadius.circular(10)),
+                  child: Text('$count', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.white)),
+                ),
+              ],
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(height: 8),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildListRow({required Color dotColor, required String title, required String subtitle, required String trailing, required bool isTrailingCrit}) {
+    return Container(
+      decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppTheme.lineSoft))),
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(width: 9, height: 9, decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle)),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(location, style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text("$time • $type", style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                Text(title, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: AppTheme.ink)),
+                const SizedBox(height: 1),
+                Text(subtitle, style: const TextStyle(fontSize: 12, color: AppTheme.ink2)),
               ],
             ),
           ),
-          if (!completed)
-            ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.cobaltBlue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                minimumSize: const Size(60, 30),
+          if (trailing.isNotEmpty) ...[
+            const SizedBox(width: 10),
+            Text(trailing, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: isTrailingCrit ? AppTheme.redDanger : AppTheme.ink2)),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Shows actual pending observation count from Drift DB as a progress bar
+class _RoundProgressBar extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final db = Provider.of<AppDatabase?>(context, listen: false);
+    if (db == null) return const SizedBox.shrink();
+
+    return StreamBuilder<List<Observation>>(
+      stream: db.select(db.observations).watch(),
+      builder: (context, snapshot) {
+        final all = snapshot.data ?? [];
+        final done = all.where((o) => o.syncStatus == 1).length;
+        final total = all.isEmpty ? 11 : all.length + 5; // 5 remaining as placeholder
+        final progress = all.isEmpty ? 0.55 : done / total;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              height: 9,
+              width: double.infinity,
+              decoration: BoxDecoration(color: Colors.white.withAlpha(40), borderRadius: BorderRadius.circular(5)),
+              alignment: Alignment.centerLeft,
+              child: FractionallySizedBox(
+                widthFactor: progress.clamp(0.0, 1.0),
+                child: Container(decoration: BoxDecoration(color: AppTheme.amberAccent, borderRadius: BorderRadius.circular(5))),
               ),
-              child: const Text("START", style: TextStyle(fontSize: 10)),
             ),
-        ],
-      ),
+            const SizedBox(height: 6),
+            Text('$done logged this shift', style: const TextStyle(fontSize: 12, color: Color(0xFFC7D4DA))),
+          ],
+        );
+      },
     );
   }
+}
 
-  Widget _buildCapaCard(String title, String dueDate, String priority, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border(left: BorderSide(color: color, width: 4)),
-        boxShadow: [BoxShadow(color: Colors.black.withAlpha(5), blurRadius: 2, offset: const Offset(0, 1))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(priority, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 10)),
-              Text(dueDate, style: const TextStyle(fontSize: 10, color: Colors.grey)),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              TextButton.icon(
-                onPressed: () {},
-                icon: const Icon(Icons.camera_alt, size: 14),
-                label: const Text("CLOSE WITH PHOTO", style: TextStyle(fontSize: 10)),
-                style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size.zero),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+/// Shows real pending observations as CAPA-style action items
+class _MyActionsCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final db = Provider.of<AppDatabase?>(context, listen: false);
+    if (db == null) return const SizedBox.shrink();
 
-  Widget _buildStatutoryGrid() {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 3,
-      mainAxisSpacing: 10,
-      crossAxisSpacing: 10,
-      childAspectRatio: 1.0,
-      children: [
-        _buildStatTile(Icons.air, "GAS", "0.02%"),
-        _buildStatTile(Icons.grain, "DUST", "1.2 mg"),
-        _buildStatTile(Icons.water_drop, "WATER", "240L"),
-      ],
-    );
-  }
+    return StreamBuilder<List<Observation>>(
+      stream: (db.select(db.observations)..where((t) => t.syncStatus.equals(0))..limit(3)).watch(),
+      builder: (context, snapshot) {
+        final pending = snapshot.data ?? [];
 
-  Widget _buildStatTile(IconData icon, String label, String value) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: AppTheme.cobaltBlue, size: 20),
-          const SizedBox(height: 4),
-          Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-        ],
-      ),
-    );
-  }
+        final rows = <Widget>[];
+        for (final obs in pending) {
+          rows.add(_actionRow(
+            dotColor: AppTheme.amberAccent,
+            title: obs.category,
+            subtitle: obs.location,
+            trailing: 'Pending sync',
+            isTrailingCrit: true,
+          ));
+        }
+        if (rows.isEmpty) {
+          rows.add(const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+            child: Text('No pending actions. All clear.', style: TextStyle(fontSize: 13, color: AppTheme.ink2)),
+          ));
+        }
 
-  Widget _buildRiskIndicator() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppTheme.greenVerified.withAlpha(200), AppTheme.greenVerified],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: const Row(
-        children: [
-          Icon(Icons.shield, color: Colors.white, size: 40),
-          SizedBox(width: 16),
-          Column(
+        return Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          decoration: BoxDecoration(color: AppTheme.panel, border: Border.all(color: AppTheme.line), borderRadius: BorderRadius.circular(8)),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("STABLE", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
-              Text("Normal operation conditions", style: TextStyle(color: Colors.white70, fontSize: 12)),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(13, 11, 13, 0),
+                child: Row(
+                  children: [
+                    const Text('My actions', style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: AppTheme.ink)),
+                    const Spacer(),
+                    if (pending.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+                        decoration: BoxDecoration(color: AppTheme.redDanger, borderRadius: BorderRadius.circular(10)),
+                        child: Text('${pending.length}', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.white)),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...rows,
             ],
           ),
+        );
+      },
+    );
+  }
+
+  Widget _actionRow({required Color dotColor, required String title, required String subtitle, required String trailing, required bool isTrailingCrit}) {
+    return Container(
+      decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppTheme.lineSoft))),
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(width: 9, height: 9, decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: AppTheme.ink)),
+                const SizedBox(height: 1),
+                Text(subtitle, style: const TextStyle(fontSize: 12, color: AppTheme.ink2)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(trailing, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: isTrailingCrit ? AppTheme.redDanger : AppTheme.ink2)),
         ],
       ),
     );

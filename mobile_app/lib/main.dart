@@ -2,15 +2,22 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'database/database.dart';
+import 'services/location_service.dart';
+import 'services/mesh_sos_service.dart';
 import 'sync/sync_service.dart';
 import 'theme/app_theme.dart';
 import 'screens/role_select.dart';
 
+// Global service instances — initialised once in main() and passed via Provider
+late AppDatabase _appDatabase;
+late LocationService _locationService;
+late MeshSosService _meshSosService;
+late SyncService _syncService;
+
 void main() {
-  // Catch Flutter framework errors
   FlutterError.onError = (details) {
     FlutterError.presentError(details);
-    debugPrint("Flutter Error: ${details.exception}");
+    debugPrint('Flutter Error: ${details.exception}');
   };
 
   runZonedGuarded(() async {
@@ -22,44 +29,65 @@ void main() {
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: Text(
-            "CRASH REPORT:\n\n${errorDetails.exception}\n\n${errorDetails.stack}",
+            'CRASH REPORT:\n\n${errorDetails.exception}\n\n${errorDetails.stack}',
             style: const TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'monospace'),
           ),
         ),
       );
     };
-    
-    // Initialize database outside of Provider to catch boot-up crashes
-    AppDatabase? database;
+
     String? initError;
-    
+
     try {
-      database = AppDatabase();
-      // Drift database is lazy, but we can verify it can be instantiated
-      final syncService = SyncService(database);
-      syncService.sync().catchError((_) => SyncResult(
-        pushed: 0,
-        serverTime: DateTime.now().toUtc(),
-      ));
+      // ── 1. Database
+      _appDatabase = AppDatabase();
+
+      // ── 2. Sync service
+      _syncService = SyncService(_appDatabase);
+
+      // ── 3. Location service — default to sirdar; role is updated on login
+      _locationService = LocationService(
+        db: _appDatabase,
+        role: 'sirdar',
+        userId: 'field_officer_01',
+      );
+      await _locationService.start(); // Immediately starts 2-min pinging
+
+      // ── 4. SOS mesh service
+      _meshSosService = MeshSosService(
+        db: _appDatabase,
+        locationService: _locationService,
+        userId: 'field_officer_01',
+        role: 'sirdar',
+        userName: 'B. Oraon',
+      );
+      await _meshSosService.startListening(); // Listens for peer SOS over UDP
+
+      // ── 5. Background sync every 30 seconds
       Timer.periodic(const Duration(seconds: 30), (_) {
-        syncService.sync().catchError((_) => SyncResult(
+        _syncService.sync().catchError((_) => SyncResult(
           pushed: 0,
           serverTime: DateTime.now().toUtc(),
         ));
       });
     } catch (e) {
       initError = e.toString();
-      debugPrint("DB INIT FAILED: $e");
+      debugPrint('INIT FAILED: $e');
     }
 
     runApp(
-      Provider<AppDatabase?>.value(
-        value: database,
+      MultiProvider(
+        providers: [
+          Provider<AppDatabase?>.value(value: _appDatabase),
+          Provider<LocationService?>.value(value: _locationService),
+          Provider<MeshSosService?>.value(value: _meshSosService),
+          Provider<SyncService?>.value(value: _syncService),
+        ],
         child: CoalGovApp(initError: initError),
       ),
     );
   }, (error, stackTrace) {
-    debugPrint("Fatal Error in Zone: $error");
+    debugPrint('Fatal Error in Zone: $error');
     debugPrint(stackTrace.toString());
   });
 }
@@ -71,27 +99,24 @@ class CoalGovApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'CoalGov',
+      title: 'CoalNetra',
       theme: AppTheme.lightTheme,
-      // If an error occurred during main(), show a red screen instead of black
-      home: initError != null 
-        ? Scaffold(
-            backgroundColor: Colors.red[900],
-            body: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Text(
-                  "Init Error: $initError", 
-                  style: const TextStyle(color: Colors.white, fontFamily: 'monospace')
+      home: initError != null
+          ? Scaffold(
+              backgroundColor: Colors.red[900],
+              body: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Text(
+                    'Init Error: $initError',
+                    style: const TextStyle(color: Colors.white, fontFamily: 'monospace'),
+                  ),
                 ),
               ),
-            ),
-          )
-        : const RoleSelectScreen(),
+            )
+          : const RoleSelectScreen(),
       debugShowCheckedModeBanner: false,
-      builder: (context, widget) {
-        return widget ?? const SizedBox.shrink();
-      },
+      builder: (context, widget) => widget ?? const SizedBox.shrink(),
     );
   }
 }

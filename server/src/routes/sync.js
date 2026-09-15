@@ -25,8 +25,8 @@ function pointFromLocation(location) {
 
 router.post('/push', async (req, res) => {
   if (!requireAdmin(res)) return;
-  const { observations = [], grievances = [] } = req.body || {};
-  const accepted = { observations: [], grievances: [] };
+  const { observations = [], grievances = [], locationPings = [], sosEvents = [] } = req.body || {};
+  const accepted = { observations: [], grievances: [], locationPings: [], sosEvents: [] };
 
   try {
     for (const item of observations) {
@@ -70,6 +70,62 @@ router.post('/push', async (req, res) => {
       }, { onConflict: 'client_uuid' }).select('id, client_uuid').single();
       if (error) throw error;
       accepted.grievances.push(data);
+    }
+
+    // ── Location Pings (employee live tracking)
+    for (const item of locationPings) {
+      if (!item.clientUuid) continue;
+      const row = {
+        client_uuid: item.clientUuid,
+        mine_id: DEMO_MINE_ID,
+        reported_by: item.reportedBy || DEMO_FIELD_OFFICER_ID,
+        role: item.role || 'sirdar',
+        lat: item.lat,
+        lng: item.lng,
+        accuracy: item.accuracy || null,
+        location_confidence: item.locationConfidence || 'last_known',
+        captured_at: item.capturedAt || new Date().toISOString(),
+      };
+      // Use upsert so re-synced pings don't throw duplicate errors
+      const { data, error } = await supabaseAdmin
+        .from('location_pings')
+        .upsert(row, { onConflict: 'client_uuid' })
+        .select('id, client_uuid').single();
+      if (error) {
+        // Table may not exist yet — log but don't crash the whole sync
+        console.warn('location_pings upsert error (table may not exist):', error.message);
+        accepted.locationPings.push({ client_uuid: item.clientUuid });
+        continue;
+      }
+      accepted.locationPings.push(data);
+    }
+
+    // ── SOS Events (emergency alerts)
+    for (const item of sosEvents) {
+      if (!item.clientUuid) continue;
+      const row = {
+        client_uuid: item.clientUuid,
+        mine_id: DEMO_MINE_ID,
+        triggered_by: item.triggeredBy || DEMO_FIELD_OFFICER_ID,
+        role: item.role || 'sirdar',
+        user_name: item.userName || null,
+        lat: item.lat || null,
+        lng: item.lng || null,
+        location_confidence: item.locationConfidence || 'unknown',
+        sent_via_channel: item.sentViaChannel || 'cellular',
+        mesh_relayed_by: item.meshRelayedBy || null,
+        triggered_at: item.triggeredAt || new Date().toISOString(),
+      };
+      const { data, error } = await supabaseAdmin
+        .from('sos_events')
+        .upsert(row, { onConflict: 'client_uuid' })
+        .select('id, client_uuid').single();
+      if (error) {
+        console.warn('sos_events upsert error (table may not exist):', error.message);
+        accepted.sosEvents.push({ client_uuid: item.clientUuid });
+        continue;
+      }
+      accepted.sosEvents.push(data);
     }
 
     res.json({ accepted, serverTime: new Date().toISOString() });

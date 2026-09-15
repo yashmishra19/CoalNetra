@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KoylaNetra Field — Flutter prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --graphite:#1E2A31; --graphite-2:#2B3A43; --graphite-3:#3A4B55;
+  --paper:#ECEFEC; --panel:#FFFFFF;
+  --line:#D3D9D5; --line-soft:#E6EAE7;
+  --ink:#1E2A31; --ink-2:#55636B; --ink-3:#7A868C;
+  --steel:#2F5D7C; --steel-bg:#E4EDF3;
+  --red:#B8322A; --red-bg:#FBEAE8;
+  --amber:#E0A21A; --amber-ink:#7E5700; --amber-bg:#FCF2DA;
+  --green:#2F7A4A; --green-bg:#E4F1E8;
+  --radius:6px;
+  --font-body:'Barlow','Noto Sans Devanagari',system-ui,sans-serif;
+  --font-fig:'Barlow Semi Condensed','Barlow',system-ui,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:var(--font-body);background:#DDE2DD;color:var(--ink);
+  min-height:100vh;display:flex;gap:28px;justify-content:center;align-items:flex-start;
+  padding:26px 20px 60px;flex-wrap:wrap
+}
+h1,h2,h3,h4{font-family:var(--font-fig);margin:0;line-height:1.15;letter-spacing:-.005em}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--steel);outline-offset:2px}
+
+/* ============ Page chrome around the phone ============ */
+.side{width:310px;max-width:100%;padding-top:8px}
+.side h1{font-size:23px;margin-bottom:4px}
+.side .lede{font-size:13.5px;color:var(--ink-2);line-height:1.5;margin:0 0 16px}
+.ctl{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:14px}
+.ctl h2{font-size:14px;margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-2)}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;font-size:13.5px;border-top:1px solid var(--line-soft)}
+.row:first-of-type{border-top:0}
+.row small{display:block;color:var(--ink-3);font-size:11.5px;line-height:1.35}
+.sw{position:relative;width:46px;height:26px;flex:none;border:0;border-radius:13px;background:var(--line);transition:background .15s}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .15s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.sw[aria-checked="true"]{background:var(--green)}
+.sw[aria-checked="true"]::after{transform:translateX(20px)}
+.sw.warn[aria-checked="true"]{background:var(--amber)}
+.btn-line{display:block;width:100%;text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:9px 11px;font-size:13px;margin-top:8px}
+.btn-line:hover{background:#E3E7E2}
+.legend{font-size:12px;color:var(--ink-3);line-height:1.5}
+.legend b{color:var(--ink-2);font-weight:600}
+
+/* ============ Device ============ */
+.device{
+  width:392px;height:812px;flex:none;border-radius:42px;padding:11px;
+  background:linear-gradient(160deg,#2C3940,#171F24);
+  box-shadow:0 18px 44px rgba(20,30,36,.32), 0 2px 0 #0d1316 inset;
+  position:relative
+}
+.screenwrap{
+  width:100%;height:100%;border-radius:32px;overflow:hidden;background:var(--paper);
+  position:relative;display:flex;flex-direction:column
+}
+.notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:24px;background:#171F24;border-radius:0 0 14px 14px;z-index:60}
+
+/* status bar */
+.statusbar{
+  height:30px;flex:none;background:var(--graphite);color:#CFD9DD;
+  display:flex;align-items:center;justify-content:space-between;padding:0 16px;
+  font-family:var(--font-fig);font-size:12px;font-weight:600;letter-spacing:.02em
+}
+.statusbar .sigs{display:flex;align-items:center;gap:6px}
+.statusbar .off{color:var(--amber)}
+
+/* app bar */
+.appbar{
+  flex:none;background:var(--graphite);color:#fff;padding:8px 14px 10px;
+  display:flex;align-items:center;gap:10px
+}
+.appbar .back{background:transparent;border:0;color:#9FB0B8;padding:4px;display:none}
+.appbar.sub .back{display:block}
+.appbar svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.appbar .ttl{font-family:var(--font-fig);font-size:17px;font-weight:600;line-height:1.1}
+.appbar .ttl small{display:block;font-family:var(--font-body);font-size:11.5px;font-weight:400;color:#9FB0B8;letter-spacing:.01em}
+.appbar .right{margin-left:auto;display:flex;align-items:center;gap:8px}
+
+/* the persistent sync + shift strip */
+.strip{
+  flex:none;display:flex;align-items:center;gap:8px;padding:7px 14px;
+  background:var(--graphite-2);color:#CFD9DD;font-size:12px
+}
+.strip .q{
+  display:inline-flex;align-items:center;gap:5px;font-family:var(--font-fig);
+  font-weight:600;background:rgba(255,255,255,.09);border-radius:11px;padding:2px 9px
+}
+.strip .q .d{width:7px;height:7px;border-radius:50%;background:var(--green)}
+.strip.offline{background:#4A3A16;color:#F2DFAE}
+.strip.offline .q .d{background:var(--amber)}
+.strip .clk{margin-left:auto;font-family:var(--font-fig);font-weight:600}
+
+/* body */
+.body{flex:1;overflow-y:auto;overflow-x:hidden;padding:12px 12px 92px;scrollbar-width:thin}
+.body::-webkit-scrollbar{width:5px}
+.body::-webkit-scrollbar-thumb{background:#C3CBC4;border-radius:3px}
+.screen{display:none}
+.screen.on{display:block}
+
+/* cards */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;margin-bottom:10px;overflow:hidden}
+.card-h{padding:11px 13px 0;display:flex;align-items:baseline;gap:8px}
+.card-h h3{font-size:14.5px}
+.card-h .cnt{
+  margin-left:auto;font-family:var(--font-fig);font-weight:700;font-size:12.5px;
+  background:var(--red);color:#fff;border-radius:10px;padding:1px 8px
+}
+.card-h .lbl{margin-left:auto;font-size:12px;color:var(--ink-3)}
+.card-b{padding:11px 13px 13px}
+.card-b.tight{padding:8px 13px 10px}
+
+/* officer header */
+.who{padding:2px 2px 10px}
+.who .nm{font-family:var(--font-fig);font-size:21px;font-weight:600;line-height:1.15}
+.who .rl{font-size:13px;color:var(--ink-2)}
+.who .ds{font-size:13px;color:var(--ink-2);margin-top:3px}
+.who .ds b{color:var(--ink);font-weight:600}
+
+/* THE primary action */
+.primary{
+  width:100%;border:0;border-radius:10px;background:var(--graphite);color:#fff;
+  padding:16px 16px 14px;text-align:left;margin-bottom:11px;display:block
+}
+.primary .k{display:block;font-family:var(--font-fig);font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:#8FA6B0}
+.primary .t{display:block;font-family:var(--font-fig);font-size:26px;font-weight:700;line-height:1.1;margin:2px 0 9px}
+.primary .pbar{display:block;height:9px;border-radius:5px;background:rgba(255,255,255,.16);overflow:hidden;margin-bottom:8px}
+.primary .pbar i{display:block;height:100%;background:var(--amber);border-radius:5px;transition:width .3s}
+.primary .nx{display:block;font-size:13px;color:#C7D4DA}
+.primary .nx b{color:#fff;font-weight:600}
+.primary.done{background:var(--green)}
+.primary.done .k{color:#C4E2CF}
+.primary.done .nx{color:#D6EDDE}
+
+/* statutory clock line */
+.due{
+  display:flex;align-items:center;gap:8px;padding:10px 13px;margin-bottom:11px;
+  background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--steel);border-radius:8px;font-size:13.5px
+}
+.due b{font-family:var(--font-fig);font-weight:700;margin-left:auto;font-size:15px}
+.due.warn{border-left-color:var(--amber);background:var(--amber-bg)}
+.due.crit{border-left-color:var(--red);background:var(--red-bg);color:var(--red)}
+
+/* three capture tiles */
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:11px}
+.tile{
+  background:var(--panel);border:1px solid var(--line);border-radius:8px;
+  padding:13px 6px 11px;text-align:center;min-height:86px;display:flex;
+  flex-direction:column;align-items:center;justify-content:center;gap:6px
+}
+.tile:active{background:var(--paper)}
+.tile svg{width:26px;height:26px;stroke:var(--graphite);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.tile span{font-family:var(--font-fig);font-size:13px;font-weight:600;line-height:1.15}
+.tile.warn svg{stroke:var(--amber-ink)}
+
+/* list rows */
+.lrow{
+  display:flex;align-items:center;gap:10px;padding:11px 13px;border-top:1px solid var(--line-soft);
+  background:transparent;border-left:0;border-right:0;border-bottom:0;width:100%;text-align:left
+}
+.lrow:first-of-type{border-top:0}
+.lrow .dt{width:9px;height:9px;border-radius:50%;flex:none}
+.dt.crit{background:var(--red)} .dt.warn{background:var(--amber)} .dt.ok{background:var(--green)} .dt.mute{background:var(--ink-3)}
+.lrow .tx{flex:1;min-width:0}
+.lrow .tx b{display:block;font-size:13.5px;font-weight:600;line-height:1.3}
+.lrow .tx small{display:block;font-size:12px;color:var(--ink-2);line-height:1.35;margin-top:1px}
+.lrow .mt{font-family:var(--font-fig);font-weight:600;font-size:12.5px;color:var(--ink-2);text-align:right;flex:none}
+.lrow .mt.crit{color:var(--red)}
+.lrow .chev{flex:none;width:16px;height:16px;stroke:var(--ink-3);fill:none;stroke-width:2}
+
+/* pills */
+.pill{
+  display:inline-block;font-family:var(--font-fig);font-size:11.5px;font-weight:600;
+  padding:1px 8px;border-radius:10px;letter-spacing:.02em;white-space:nowrap
+}
+.pill.crit{background:var(--red-bg);color:var(--red)}
+.pill.warn{background:var(--amber-bg);color:var(--amber-ink)}
+.pill.ok{background:var(--green-bg);color:var(--green)}
+.pill.info{background:var(--steel-bg);color:var(--steel)}
+.pill.mute{background:#EDEFEC;color:var(--ink-2)}
+
+/* round points */
+.pt{display:flex;gap:11px;padding:12px 13px;border-top:1px solid var(--line-soft);width:100%;text-align:left;background:transparent;border-left:0;border-right:0;border-bottom:0}
+.pt:first-of-type{border-top:0}
+.pt .ix{
+  width:26px;height:26px;flex:none;border-radius:50%;border:2px solid var(--line);
+  display:grid;place-items:center;font-family:var(--font-fig);font-weight:700;font-size:13px;color:var(--ink-3)
+}
+.pt.done .ix{background:var(--green);border-color:var(--green);color:#fff}
+.pt.issue .ix{background:var(--red);border-color:var(--red);color:#fff}
+.pt.skip .ix{background:var(--ink-3);border-color:var(--ink-3);color:#fff}
+.pt.next .ix{border-color:var(--graphite);color:var(--graphite)}
+.pt .pb{flex:1;min-width:0}
+.pt .pb b{display:block;font-size:14px;font-weight:600}
+.pt .pb small{display:block;font-size:12px;color:var(--ink-2);margin-top:1px}
+.pt .pm{flex:none;align-self:center}
+
+/* checklist */
+.chk{padding:11px 13px;border-top:1px solid var(--line-soft)}
+.chk:first-of-type{border-top:0}
+.chk .q{font-size:13.5px;font-weight:500;margin-bottom:8px;line-height:1.35}
+.chk .opts{display:flex;gap:8px}
+.chk .opts button{
+  flex:1;min-height:44px;border:1.5px solid var(--line);background:var(--panel);
+  border-radius:var(--radius);font-family:var(--font-fig);font-weight:600;font-size:14px
+}
+.chk .opts button[aria-pressed="true"].okb{background:var(--green-bg);border-color:var(--green);color:var(--green)}
+.chk .opts button[aria-pressed="true"].nob{background:var(--red-bg);border-color:var(--red);color:var(--red)}
+
+/* big buttons */
+.big{
+  width:100%;min-height:56px;border:0;border-radius:8px;background:var(--steel);color:#fff;
+  font-family:var(--font-fig);font-size:17px;font-weight:600;letter-spacing:.01em;
+  display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px
+}
+.big.dark{background:var(--graphite)}
+.big.ghost{background:var(--panel);color:var(--graphite);border:1.5px solid var(--line)}
+.big.danger{background:var(--red)}
+.big[disabled]{opacity:.45}
+.big svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+
+/* bottom nav + emergency */
+.dock{
+  position:absolute;left:0;right:0;bottom:0;z-index:40;
+  background:var(--panel);border-top:1px solid var(--line)
+}
+.sos{
+  width:100%;min-height:46px;border:0;background:var(--red);color:#fff;
+  font-family:var(--font-fig);font-size:15px;font-weight:700;letter-spacing:.1em;
+  display:flex;align-items:center;justify-content:center;gap:9px
+}
+.sos svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2.2}
+.tabs{display:grid;grid-template-columns:repeat(5,1fr)}
+.tabs button{
+  background:transparent;border:0;padding:7px 2px 9px;display:flex;flex-direction:column;
+  align-items:center;gap:3px;color:var(--ink-3);font-size:10.5px;font-family:var(--font-fig);font-weight:600;position:relative
+}
+.tabs button svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tabs button[aria-current="page"]{color:var(--graphite)}
+.tabs button .bdg{
+  position:absolute;top:3px;right:calc(50% - 20px);background:var(--red);color:#fff;
+  border-radius:9px;font-size:9.5px;font-weight:700;padding:0 5px;line-height:15px
+}
+
+/* bottom sheet */
+.scrim{position:absolute;inset:0;background:rgba(20,28,33,.5);z-index:70;display:none}
+.scrim.on{display:block}
+.sheet{
+  position:absolute;left:0;right:0;bottom:0;z-index:80;background:var(--paper);
+  border-radius:18px 18px 0 0;max-height:88%;display:none;flex-direction:column;
+  box-shadow:0 -8px 30px rgba(0,0,0,.22)
+}
+.sheet.on{display:flex}
+.sheet .grab{width:38px;height:4px;border-radius:2px;background:var(--line);margin:9px auto 2px;flex:none}
+.sheet .sh{padding:6px 15px 0;flex:none}
+.sheet .sh h3{font-size:18px}
+.sheet .sh p{font-size:12.5px;color:var(--ink-2);margin:3px 0 0;line-height:1.4}
+.sheet .sb{padding:12px 15px 16px;overflow-y:auto}
+
+/* voice */
+.voice{
+  width:100%;min-height:84px;border-radius:10px;border:2px dashed var(--line);
+  background:var(--panel);display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:5px;font-family:var(--font-fig);font-weight:600;font-size:15px;color:var(--ink-2);
+  user-select:none;touch-action:none
+}
+.voice svg{width:25px;height:25px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round}
+.voice.rec{background:var(--red-bg);border-color:var(--red);border-style:solid;color:var(--red)}
+.voice small{font-family:var(--font-body);font-weight:400;font-size:11.5px;color:var(--ink-3)}
+.voice.rec small{color:var(--red)}
+.waves{display:flex;gap:3px;align-items:flex-end;height:18px}
+.waves i{width:3px;background:var(--red);border-radius:2px;animation:w .7s ease-in-out infinite}
+.waves i:nth-child(2){animation-delay:.1s}.waves i:nth-child(3){animation-delay:.2s}
+.waves i:nth-child(4){animation-delay:.3s}.waves i:nth-child(5){animation-delay:.15s}
+@keyframes w{0%,100%{height:5px}50%{height:18px}}
+
+/* chips of captured evidence */
+.ev{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+.evc{
+  display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);
+  border-radius:var(--radius);padding:5px 8px;font-size:12px
+}
+.evc svg{width:15px;height:15px;stroke:var(--steel);fill:none;stroke-width:1.8}
+.evc .hx{font-family:var(--font-fig);font-size:10.5px;color:var(--ink-3);letter-spacing:.02em}
+.evc button{border:0;background:transparent;color:var(--ink-3);padding:0 0 0 2px;line-height:1}
+.thumb{width:52px;height:52px;border-radius:5px;border:1px solid var(--line);object-fit:cover;display:block}
+
+/* severity */
+.sev{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:4px}
+.sev button{
+  min-height:52px;border:1.5px solid var(--line);background:var(--panel);border-radius:var(--radius);
+  font-family:var(--font-fig);font-weight:600;font-size:13.5px;line-height:1.15;padding:4px
+}
+.sev button[aria-pressed="true"][data-s="Critical"]{background:var(--red);border-color:var(--red);color:#fff}
+.sev button[aria-pressed="true"][data-s="High"]{background:#D96A2C;border-color:#D96A2C;color:#fff}
+.sev button[aria-pressed="true"][data-s="Medium"]{background:var(--amber);border-color:var(--amber);color:#43300A}
+.sev button[aria-pressed="true"][data-s="Low"]{background:var(--ink-3);border-color:var(--ink-3);color:#fff}
+
+/* auto-attached metadata */
+.meta{background:#E7EBE7;border:1px solid var(--line);border-radius:var(--radius);padding:9px 11px;margin-top:11px}
+.meta .mh{font-family:var(--font-fig);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-2);margin-bottom:6px}
+.meta ul{list-style:none;margin:0;padding:0;font-size:12px;color:var(--ink-2);line-height:1.65}
+.meta li{display:flex;gap:8px}
+.meta li span{margin-left:auto;font-family:var(--font-fig);font-weight:600;color:var(--ink);text-align:right}
+.meta li span.bad{color:var(--red)}
+
+/* field */
+.fld{margin-top:11px}
+.fld label{display:block;font-family:var(--font-fig);font-size:12.5px;font-weight:600;color:var(--ink-2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+.fld textarea,.fld input,.fld select{
+  width:100%;font:inherit;font-size:14px;padding:10px 11px;border:1px solid var(--line);
+  border-radius:var(--radius);background:var(--panel);color:var(--ink);resize:vertical
+}
+
+/* report */
+.rep{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;font-size:13px;line-height:1.55}
+.rep .rh{text-align:center;border-bottom:1.5px solid var(--graphite);padding-bottom:9px;margin-bottom:10px}
+.rep .rh b{font-family:var(--font-fig);font-size:15px;display:block}
+.rep .rh small{font-size:11.5px;color:var(--ink-2)}
+.rep dl{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;margin:0 0 10px;font-size:12.5px}
+.rep dt{color:var(--ink-2)}
+.rep dd{margin:0;font-weight:600;font-family:var(--font-fig)}
+.rep .sec{font-family:var(--font-fig);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-2);border-bottom:1px solid var(--line-soft);padding-bottom:3px;margin:12px 0 6px}
+.rep ol,.rep ul{margin:0;padding-left:18px;font-size:12.5px;line-height:1.6}
+.sig{width:100%;height:96px;border:1px dashed var(--line);border-radius:var(--radius);background:var(--panel);display:block;touch-action:none}
+
+/* sync locker */
+.q-item{display:flex;gap:10px;align-items:center;padding:10px 13px;border-top:1px solid var(--line-soft)}
+.q-item:first-of-type{border-top:0}
+.q-item .st{width:22px;height:22px;flex:none;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;font-family:var(--font-fig)}
+.st.pend{background:var(--amber-bg);color:var(--amber-ink)}
+.st.sent{background:var(--green-bg);color:var(--green)}
+.st.fail{background:var(--red-bg);color:var(--red)}
+.q-item .qb{flex:1;min-width:0}
+.q-item .qb b{display:block;font-size:13px;font-weight:600}
+.q-item .qb small{font-size:11.5px;color:var(--ink-3);font-family:var(--font-fig)}
+
+/* toast */
+.toast{
+  position:absolute;left:14px;right:14px;bottom:104px;z-index:90;background:var(--graphite);color:#fff;
+  border-radius:8px;padding:11px 13px;font-size:13px;line-height:1.4;
+  opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s;pointer-events:none
+}
+.toast.on{opacity:1;transform:translateY(0)}
+.toast.high{bottom:auto;top:44px}
+.toast b{font-family:var(--font-fig)}
+
+/* banners */
+.ban{border-radius:8px;padding:10px 12px;font-size:12.5px;line-height:1.45;margin-bottom:10px}
+.ban.amber{background:var(--amber-bg);border:1px solid #E8D49B;color:#5E4408}
+.ban.steel{background:var(--steel-bg);border:1px solid #BBD3E2;color:#274A61}
+.ban b{font-family:var(--font-fig)}
+
+.note{font-size:12px;color:var(--ink-3);line-height:1.5;margin:8px 2px 0}
+.empty{text-align:center;color:var(--ink-3);font-size:13px;padding:26px 12px}
+
+@media (max-width:820px){
+  body{padding:14px 10px 40px}
+  .device{width:100%;max-width:392px;height:780px}
+  .side{width:100%;max-width:392px;order:2}
+}
+</style>
+</head>
+<body>
+
+<!-- ================= Demo controls ================= -->
+<aside class="side">
+  <h1>KoylaNetra Field</h1>
+  <p class="lede">Functional prototype of the Flutter APK for an overman at Demo OCP-1, Wani Area.
+  Opencast round, Shift B. Use the switches below to demo it.</p>
+
+  <div class="ctl">
+    <h2>Demo controls</h2>
+    <div class="row">
+      <div>Network<small>Turn this off, then keep capturing</small></div>
+      <button class="sw" id="swNet" role="switch" aria-checked="true" aria-label="Network"></button>
+    </div>
+    <div class="row">
+      <div>Device mode<small id="modeTxt">Opencast, GPS location proof</small></div>
+      <button class="sw warn" id="swMode" role="switch" aria-checked="false" aria-label="Underground mode"></button>
+    </div>
+    <div class="row">
+      <div>Language<small>Capture prompts and labels</small></div>
+      <button class="sw" id="swLang" role="switch" aria-checked="false" aria-label="Hindi"></button>
+    </div>
+    <button class="btn-line" id="btnReset">Reset the demo to mid-shift</button>
+    <button class="btn-line" id="btnFill">Finish the round instantly</button>
+  </div>
+
+  <div class="ctl">
+    <h2>Try this order</h2>
+    <p class="legend">
+      <b>1.</b> Open <b>Continue round</b> and complete Bench 4. Mark one check as Not OK and watch it
+      open a capture already filled in.<br><br>
+      <b>2.</b> Switch <b>Network</b> off. Record an observation with a voice note and a photo. The queue
+      counter rises and nothing is lost.<br><br>
+      <b>3.</b> Switch <b>Network</b> back on and watch the queue drain in the strip and in the Sync locker.<br><br>
+      <b>4.</b> Finish the round, open <b>Report</b>, sign it and submit. The prescribed form is produced
+      for the paper register as well.
+    </p>
+  </div>
+
+  <div class="ctl">
+    <h2>Why it is shaped this way</h2>
+    <p class="legend">
+      The overman must file a shift report every shift under Regulation 47(7)(d) of the Coal Mines
+      Regulations 2017, and hand over conditions to the next official. The report is the spine of this
+      app, so observations and readings arrive as a by-product of work that cannot be skipped.
+      <br><br>
+      Every target is at least 56dp for gloved hands, voice comes before typing, and no risk score or
+      ranking appears anywhere. Underground mode disables GPS and photographs and states that an
+      intrinsically safe device approved by DGMS is required.
+    </p>
+  </div>
+</aside>
+
+<!-- ================= Device ================= -->
+<div class="device">
+  <div class="notch" aria-hidden="true"></div>
+  <div class="screenwrap">
+
+    <div class="statusbar">
+      <span id="clock">16:20</span>
+      <span class="sigs">
+        <span id="netTxt">LTE</span>
+        <svg width="15" height="12" viewBox="0 0 15 12" aria-hidden="true"><rect x="0" y="8" width="2.4" height="4" fill="currentColor"/><rect x="3.6" y="5.5" width="2.4" height="6.5" fill="currentColor"/><rect x="7.2" y="3" width="2.4" height="9" fill="currentColor"/><rect x="10.8" y="0" width="2.4" height="12" fill="currentColor" opacity=".4"/></svg>
+        <svg width="22" height="11" viewBox="0 0 22 11" aria-hidden="true"><rect x=".5" y=".5" width="18" height="10" rx="2.5" fill="none" stroke="currentColor"/><rect x="2" y="2" width="11" height="7" rx="1" fill="currentColor"/><rect x="20" y="3.5" width="2" height="4" rx="1" fill="currentColor"/></svg>
+      </span>
+    </div>
+
+    <header class="appbar" id="appbar">
+      <button class="back" id="btnBack" aria-label="Back">
+        <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+      </button>
+      <div class="ttl" id="barTitle">Shift B<small id="barSub">Demo OCP-1 &middot; Wani Area</small></div>
+      <div class="right" id="barRight"></div>
+    </header>
+
+    <div class="strip" id="strip">
+      <span class="q"><span class="d"></span><span id="qCount">0 synced</span></span>
+      <span id="stripMode">Opencast</span>
+      <span class="clk" id="shiftLeft">4h 12m left</span>
+    </div>
+
+    <div class="body" id="body">
+
+      <!-- ================= 1. SHIFT HOME ================= -->
+      <section class="screen on" id="s-home">
+        <div class="who">
+          <div class="nm">B. Oraon</div>
+          <div class="rl">Overman &middot; Certificate 1st class</div>
+          <div class="ds">Your district today: <b>Benches 3 to 5, Haul Road North, Dump-3 toe, Sump-1</b></div>
+        </div>
+
+        <div class="ban amber" id="ugBan" style="display:none">
+          <b>Underground mode.</b> Ordinary phones are not permitted in gassy workings. Use the issued
+          intrinsically safe handheld from the lamp room. GPS and camera are off; scan the tag at each point.
+        </div>
+
+        <button class="primary" id="primaryBtn" data-go="round">
+          <span class="k" id="primK">Statutory round</span>
+          <span class="t" id="primT">Continue round</span>
+          <span class="pbar"><i id="primBar" style="width:55%"></i></span>
+          <span class="nx" id="primN">6 of 11 points done &middot; next <b>Bench 4, coal face</b></span>
+        </button>
+
+        <div class="due" id="dueBox">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          <span>Shift report due 22:00</span><b id="dueLeft">3h 40m</b>
+        </div>
+
+        <div class="tiles">
+          <button class="tile" data-cap="Observation">
+            <svg viewBox="0 0 24 24"><path d="M12 4l8 15H4z"/><path d="M12 10v4M12 16.5v.4"/></svg>
+            <span id="tl1">Observation</span>
+          </button>
+          <button class="tile warn" data-cap="Near miss">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M8.5 8.5l7 7M15.5 8.5l-7 7"/></svg>
+            <span id="tl2">Near miss</span>
+          </button>
+          <button class="tile" data-cap="Reading">
+            <svg viewBox="0 0 24 24"><path d="M4 19V9M10 19V5M16 19v-7M21 19H3"/></svg>
+            <span id="tl3">Reading</span>
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="card-h"><h3>My actions</h3><span class="cnt" id="actCnt">3</span></div>
+          <div id="homeActions"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-h"><h3>Handover from Shift A</h3><span class="cnt">2</span></div>
+          <div id="homeHandover"></div>
+        </div>
+
+        <p class="note">Your records are sealed when they sync. If anyone asks later what you inspected
+        and when, this is your evidence.</p>
+      </section>
+
+      <!-- ================= 2. ROUND ================= -->
+      <section class="screen" id="s-round">
+        <div class="ban steel" id="roundBan">
+          <b>Location proof required.</b> A point can only be marked done from inside the lease boundary.
+          Points you skip are recorded with the reason, not hidden.
+        </div>
+        <div class="card">
+          <div class="card-h"><h3>Round points</h3><span class="lbl" id="roundLbl">6 of 11 done</span></div>
+          <div id="pointList"></div>
+        </div>
+        <p class="note">Order follows the inspection route. You may take points out of order; the app records
+        the actual sequence and times.</p>
+      </section>
+
+      <!-- ================= 2b. POINT DETAIL ================= -->
+      <section class="screen" id="s-point">
+        <div class="card">
+          <div class="card-b tight">
+            <div style="display:flex;align-items:baseline;gap:8px">
+              <h3 id="ptName" style="font-size:17px">Bench 4, coal face</h3>
+              <span class="pill mute" id="ptTag" style="margin-left:auto">TAG-B4-01</span>
+            </div>
+            <p class="note" style="margin-top:4px" id="ptHint">Stand at the point and check in. Your location
+            is compared with the lease boundary.</p>
+            <button class="big" id="btnCheckin">
+              <svg viewBox="0 0 24 24"><path d="M12 21s7-5.5 7-11a7 7 0 10-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+              <span id="checkinTxt">Check in with GPS</span>
+            </button>
+            <div class="meta" id="ptMeta" style="display:none">
+              <div class="mh">Checked in</div>
+              <ul>
+                <li>Method<span id="mMethod">GPS</span></li>
+                <li>Coordinates<span id="mCoord">20.0417 N, 78.9932 E</span></li>
+                <li>Accuracy<span id="mAcc">4 m</span></li>
+                <li>Inside lease<span id="mFence">Yes</span></li>
+                <li>Time<span id="mTime">16:21:04</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" id="chkCard" style="display:none">
+          <div class="card-h"><h3>Checks at this point</h3></div>
+          <div id="chkList"></div>
+        </div>
+
+        <button class="big dark" id="btnPtDone" style="display:none">Save point and continue</button>
+        <button class="big ghost" id="btnPtSkip">Cannot reach this point</button>
+      </section>
+
+      <!-- ================= 4. MY ACTIONS ================= -->
+      <section class="screen" id="s-actions">
+        <div class="card">
+          <div class="card-h"><h3>Assigned to me</h3><span class="lbl" id="mineLbl"></span></div>
+          <div id="actMine"></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><h3>Waiting for my verification</h3></div>
+          <div id="actVerify"></div>
+        </div>
+        <p class="note">You cannot verify a corrective action that you closed yourself. The app and the
+        server both refuse it.</p>
+      </section>
+
+      <!-- ================= 5. SHIFT REPORT ================= -->
+      <section class="screen" id="s-report">
+        <div class="ban steel">
+          <b>This is the statutory form.</b> It is built from the round you just walked, under Regulation
+          47(7)(d) of the Coal Mines Regulations 2017. Nothing here is typed twice.
+        </div>
+
+        <div class="rep" id="repBody"></div>
+
+        <div class="card" style="margin-top:10px">
+          <div class="card-b">
+            <div class="fld" style="margin-top:0">
+              <label for="repRemark">Your remarks</label>
+              <textarea id="repRemark" rows="3" placeholder="Anything the next shift and the manager should know"></textarea>
+            </div>
+            <div class="fld">
+              <label for="sigPad">Sign here</label>
+              <canvas class="sig" id="sigPad" width="330" height="96"></canvas>
+              <button class="btn-line" id="btnClearSig" style="margin-top:6px;text-align:center">Clear signature</button>
+            </div>
+          </div>
+        </div>
+
+        <button class="big dark" id="btnSubmitRep" disabled>Sign and submit</button>
+        <p class="note">On submit the report is queued for the manager and, until the Chief Inspector
+        prescribes electronic records for this mine, printed for the bound paper register. One entry, two
+        outputs.</p>
+      </section>
+
+      <!-- ================= 6. HANDOVER ================= -->
+      <section class="screen" id="s-handover">
+        <div class="card">
+          <div class="card-h"><h3>From S. Ekka, Shift A</h3><span class="lbl">Ended 14:00</span></div>
+          <div id="hoIn"></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><h3>Your note to Shift C</h3><span class="lbl">Starts 22:00</span></div>
+          <div class="card-b">
+            <div class="fld" style="margin-top:0">
+              <label for="hoOut">Conditions to pass on</label>
+              <textarea id="hoOut" rows="4" placeholder="Speak or type what the next official must know"></textarea>
+            </div>
+            <button class="big ghost" id="btnHoVoice">
+              <svg viewBox="0 0 24 24"><path d="M12 3a3 3 0 013 3v6a3 3 0 01-6 0V6a3 3 0 013-3z"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg>
+              Record instead
+            </button>
+            <button class="big dark" id="btnHoSave">Save handover</button>
+          </div>
+        </div>
+        <p class="note">Passing conditions to the succeeding official at the end of duty is a statutory duty
+        under Regulation 47, not a courtesy.</p>
+      </section>
+
+      <!-- ================= 7. SYNC LOCKER ================= -->
+      <section class="screen" id="s-locker">
+        <div class="ban steel" id="lockBan">
+          <b>Nothing is lost when there is no signal.</b> Records are written to the phone first and sent
+          when a network returns. Each keeps its own identity, so a retry never creates a duplicate.
+        </div>
+        <div class="card">
+          <div class="card-h"><h3>Queue</h3><span class="lbl" id="lockLbl"></span></div>
+          <div id="lockList"></div>
+        </div>
+        <button class="big ghost" id="btnRetry">Try sending now</button>
+      </section>
+
+      <!-- ================= 8. ME ================= -->
+      <section class="screen" id="s-me">
+        <div class="card">
+          <div class="card-b">
+            <div class="who" style="padding:0">
+              <div class="nm">B. Oraon</div>
+              <div class="rl">Overman &middot; Employee 41822</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-h"><h3>My certificates</h3></div>
+          <div id="certList"></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><h3>Device</h3></div>
+          <div class="card-b tight">
+            <ul class="meta" style="margin:0;background:transparent;border:0;padding:0">
+              <li>Mode<span id="meMode">Opencast</span></li>
+              <li>Cached for offline<span>11 points, 4 checklists, 1 boundary</span></li>
+              <li>Battery saver<span>On, GPS sampled at points only</span></li>
+              <li>App<span>KoylaNetra Field 0.4.1</span></li>
+            </ul>
+          </div>
+        </div>
+        <p class="note">This app shows you your own record. It does not rank officers by how much they
+        report, because that suppresses the reports that matter.</p>
+      </section>
+
+    </div><!-- /body -->
+
+    <!-- ================= Toast ================= -->
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <!-- ================= Dock ================= -->
+    <div class="dock">
+      <button class="sos" id="btnSos">
+        <svg viewBox="0 0 24 24"><path d="M12 3l9 16H3z"/><path d="M12 9v4M12 15.5v.4"/></svg>
+        EMERGENCY
+      </button>
+      <nav class="tabs" id="tabs" aria-label="Sections">
+        <button data-go="home" aria-current="page">
+          <svg viewBox="0 0 24 24"><path d="M4 11l8-6 8 6v8a1 1 0 01-1 1h-4v-6H9v6H5a1 1 0 01-1-1z"/></svg>Shift</button>
+        <button data-go="round">
+          <svg viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h9"/><circle cx="19" cy="17" r="2.2"/></svg>Round</button>
+        <button data-go="actions">
+          <svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg>Actions<span class="bdg" id="tabActBdg">3</span></button>
+        <button data-go="report">
+          <svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v5h5M10 13h6M10 17h4"/></svg>Report</button>
+        <button data-go="locker">
+          <svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>Sync<span class="bdg" id="tabSyncBdg" style="display:none">0</span></button>
+      </nav>
+    </div>
+
+    <!-- ================= Sheets ================= -->
+    <div class="scrim" id="scrim"></div>
+
+    <!-- Capture -->
+    <div class="sheet" id="shCapture" role="dialog" aria-modal="true" aria-labelledby="capTitle">
+      <div class="grab"></div>
+      <div class="sh">
+        <h3 id="capTitle">Observation</h3>
+        <p id="capSub">Bench 4, coal face &middot; Shift B</p>
+      </div>
+      <div class="sb">
+        <div class="voice" id="voiceBtn">
+          <svg viewBox="0 0 24 24"><path d="M12 3a3 3 0 013 3v6a3 3 0 01-6 0V6a3 3 0 013-3z"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg>
+          <span id="voiceTxt">Hold to speak</span>
+          <small id="voiceSub">Hindi or Marathi. Typing is optional.</small>
+        </div>
+
+        <div class="ev" id="evList"></div>
+
+        <button class="big ghost" id="btnPhoto">
+          <svg viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.4"/></svg>
+          <span id="photoTxt">Add photo</span>
+        </button>
+
+        <div class="fld">
+          <label>How serious is it</label>
+          <div class="sev" id="sevPick">
+            <button data-s="Critical" aria-pressed="false">Critical</button>
+            <button data-s="High" aria-pressed="false">High</button>
+            <button data-s="Medium" aria-pressed="false">Medium</button>
+            <button data-s="Low" aria-pressed="false">Low</button>
+          </div>
+        </div>
+
+        <div class="fld">
+          <label for="capText">Write instead, if you prefer</label>
+          <textarea id="capText" rows="2" placeholder="Optional"></textarea>
+        </div>
+
+        <div class="meta">
+          <div class="mh">Attached automatically</div>
+          <ul>
+            <li>Point<span id="cmPoint">Bench 4, coal face</span></li>
+            <li>Location<span id="cmLoc">20.0417 N, 78.9932 E &middot; 4 m</span></li>
+            <li>Inside lease<span id="cmFence">Yes</span></li>
+            <li>Time<span id="cmTime">16:24:11</span></li>
+            <li>Photo fingerprint<span id="cmHash">none yet</span></li>
+            <li>Network<span id="cmNet">Online</span></li>
+          </ul>
+        </div>
+
+        <button class="big dark" id="btnCapSave">Save</button>
+        <button class="big ghost" id="btnCapCancel">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Verify -->
+    <div class="sheet" id="shVerify" role="dialog" aria-modal="true" aria-labelledby="vfTitle">
+      <div class="grab"></div>
+      <div class="sh"><h3 id="vfTitle">Verify closure</h3><p id="vfSub"></p></div>
+      <div class="sb">
+        <div class="card" style="margin-bottom:10px">
+          <div class="card-b tight">
+            <div style="display:flex;gap:9px">
+              <div style="flex:1">
+                <div class="note" style="margin:0 0 4px"><b>Before</b></div>
+                <svg viewBox="0 0 100 70" style="width:100%;border:1px solid var(--line);border-radius:5px;background:#E8E2D6">
+                  <rect width="100" height="70" fill="#E8E2D6"/><path d="M0 46h100v24H0z" fill="#C9BFA8"/>
+                  <path d="M0 46h100" stroke="#fff" stroke-width="1.4" stroke-dasharray="6 4"/>
+                </svg>
+              </div>
+              <div style="flex:1">
+                <div class="note" style="margin:0 0 4px"><b>After</b></div>
+                <svg viewBox="0 0 100 70" style="width:100%;border:1px solid var(--line);border-radius:5px;background:#E8E2D6">
+                  <rect width="100" height="70" fill="#E8E2D6"/><path d="M0 46h100v24H0z" fill="#C9BFA8"/>
+                  <path d="M0 46h100" stroke="#fff" stroke-width="1.4" stroke-dasharray="6 4"/>
+                  <path d="M62 46l12-14 12 14z" fill="#8E6A4E"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="ban amber" id="vfWarn" style="display:none">
+          <b>You closed this one.</b> A different official must verify it, so this action is blocked here
+          and on the server.
+        </div>
+        <button class="big dark" id="btnVfOk">Closure is acceptable</button>
+        <button class="big ghost" id="btnVfNo">Reopen with a reason</button>
+      </div>
+    </div>
+
+    <!-- Skip reason -->
+    <div class="sheet" id="shSkip" role="dialog" aria-modal="true" aria-labelledby="skTitle">
+      <div class="grab"></div>
+      <div class="sh"><h3 id="skTitle">Why can this point not be reached?</h3>
+      <p>The reason appears on your shift report. It is recorded, not hidden.</p></div>
+      <div class="sb">
+        <div class="fld" style="margin-top:0">
+          <label for="skReason">Reason</label>
+          <select id="skReason">
+            <option>Area barricaded, blasting in progress</option>
+            <option>Machinery working at the face, unsafe to approach</option>
+            <option>Water accumulation blocking the route</option>
+            <option>Instructed by the manager to stay clear</option>
+            <option>Other, written below</option>
+          </select>
+        </div>
+        <div class="fld"><label for="skNote">Add detail</label><textarea id="skNote" rows="2"></textarea></div>
+        <button class="big dark" id="btnSkipSave">Record and continue</button>
+        <button class="big ghost" id="btnSkipCancel">Cancel</button>
+      </div>
+    </div>
+
+    <!-- SOS -->
+    <div class="sheet" id="shSos" role="dialog" aria-modal="true" aria-labelledby="sosTitle">
+      <div class="grab"></div>
+      <div class="sh"><h3 id="sosTitle" style="color:var(--red)">Raise an emergency</h3>
+      <p>This calls the control room, the mine manager and the rescue station, with your last known
+      position. Two steps, so a pocket tap cannot raise a false alarm.</p></div>
+      <div class="sb">
+        <button class="big danger" id="btnSosGo">Hold to confirm</button>
+        <button class="big ghost" id="btnSosCancel">Cancel</button>
+        <p class="note">If you cannot speak, send it anyway. Position and identity go with the alert.</p>
+      </div>
+    </div>
+
+  </div><!-- /screenwrap -->
+</div><!-- /device -->
+
+<script>
+(function(){
+"use strict";
+
+/* ============================================================
+   State. Mirrors the Drift tables the Flutter app would hold.
+   ============================================================ */
+var S = {
+  online:true, mode:'opencast', hi:false,
+  screen:'home', prevScreen:'home',
+  activePoint:null, capture:null, verifying:null,
+  signed:false,
+  points:[
+    {id:'p1', name:'Bench 3, upper face',  sec:'Bench 3',      tag:'TAG-B3-01', st:'done',  at:'14:22'},
+    {id:'p2', name:'Bench 3, ramp',        sec:'Bench 3',      tag:'TAG-B3-02', st:'done',  at:'14:41'},
+    {id:'p3', name:'Haul Road North, 0-1 km', sec:'Haul Road', tag:'TAG-HR-01', st:'done',  at:'15:05'},
+    {id:'p4', name:'Haul Road North, 1-2 km', sec:'Haul Road', tag:'TAG-HR-02', st:'issue', at:'15:26', note:'Berm below height at 1.2 km'},
+    {id:'p5', name:'Sump-1 pump house',    sec:'Sump-1',       tag:'TAG-SP-01', st:'done',  at:'15:48'},
+    {id:'p6', name:'Dump-3 toe',           sec:'Dump-3',       tag:'TAG-DP-03', st:'done',  at:'16:06'},
+    {id:'p7', name:'Bench 4, coal face',   sec:'Bench 4',      tag:'TAG-B4-01', st:'pending'},
+    {id:'p8', name:'Bench 4, dozer area',  sec:'Bench 4',      tag:'TAG-B4-02', st:'pending'},
+    {id:'p9', name:'Bench 5, working face',sec:'Bench 5',      tag:'TAG-B5-01', st:'pending'},
+    {id:'p10',name:'Explosives magazine',  sec:'Magazine',     tag:'TAG-MG-01', st:'pending'},
+    {id:'p11',name:'CHP feeder and belt',  sec:'CHP',          tag:'TAG-CH-01', st:'pending'}
+  ],
+  checks:[
+    'Benching and sloping, as per the approved plan',
+    'Haul road width, berms and drainage',
+    'Machinery guarding, reversing alarms and lights',
+    'Travelling route in use, PPE worn',
+    'Illumination, signage and speed limit boards'
+  ],
+  capas:[
+    {id:'CAPA-231', t:'Low berm on the outer edge', loc:'Haul Road North', sev:'Critical', due:'18:20', role:'verify', closedBy:'A. Kujur'},
+    {id:'CAPA-240', t:'Loose material on the bench edge', loc:'Bench 3', sev:'Medium', due:'Today', role:'mine'},
+    {id:'CAPA-246', t:'Speed limit board missing at the ramp', loc:'Bench 3 ramp', sev:'Medium', due:'17 Sep', role:'mine'},
+    {id:'CAPA-238', t:'Cable joint left uncovered', loc:'Sump-1', sev:'High', due:'12 Sep', role:'verify', closedBy:'B. Oraon'}
+  ],
+  handover:[
+    {t:'Water building at the Dump-3 toe', d:'Pump ran 4 hours. Watch it after the rain, the radar alert is still on.'},
+    {t:'Dozer DT-14 reversing alarm is weak', d:'Workshop informed at 13:10. Keep persons clear on the north side.'}
+  ],
+  certs:[
+    {t:'Overman certificate, 1st class', d:'Valid', st:'ok'},
+    {t:'Gas testing certificate', d:'Valid to 14 Mar 2028', st:'ok'},
+    {t:'Refresher vocational training', d:'Due in 38 days', st:'warn'},
+    {t:'Periodic medical examination', d:'Valid to 2 Feb 2027', st:'ok'}
+  ],
+  outbox:[], captured:[], seq:1
+};
+
+var $ = function(id){ return document.getElementById(id); };
+var TITLES = {
+  home:['Shift B','Demo OCP-1 · Wani Area'], round:['Statutory round','Reg 47(7)(d) inspection'],
+  point:['Point','Check in, then record'], actions:['My actions','Assigned and to verify'],
+  report:['Shift report','Overman, Shift B'], handover:['Handover','Shift A to Shift C'],
+  locker:['Sync locker','What is waiting to go'], me:['Me','Certificates and device']
+};
+var HI = {
+  tl1:['Observation','अवलोकन'], tl2:['Near miss','निकट चूक'], tl3:['Reading','रीडिंग'],
+  voiceTxt:['Hold to speak','बोलने के लिए दबाए रखें'],
+  voiceSub:['Hindi or Marathi. Typing is optional.','हिंदी या मराठी। टाइप करना ज़रूरी नहीं।'],
+  photoTxt:['Add photo','फ़ोटो जोड़ें'], checkinTxt:['Check in with GPS','जीपीएस से चेक-इन करें']
+};
+
+/* ============================================================
+   Navigation
+   ============================================================ */
+function go(name){
+  if(S.screen!==name) S.prevScreen = S.screen;
+  S.screen = name;
+  ['home','round','point','actions','report','handover','locker','me'].forEach(function(n){
+    var el = $('s-'+n); if(el) el.classList.toggle('on', n===name);
+  });
+  var t = TITLES[name] || TITLES.home;
+  $('barTitle').childNodes[0].nodeValue = t[0];
+  $('barSub').textContent = t[1];
+  $('appbar').classList.toggle('sub', name==='point');
+  [].forEach.call($('tabs').children, function(b){
+    if(b.dataset.go===name) b.setAttribute('aria-current','page');
+    else b.removeAttribute('aria-current');
+  });
+  $('body').scrollTop = 0;
+  if(name==='report') renderReport();
+  if(name==='locker') renderLocker();
+}
+[].forEach.call(document.querySelectorAll('[data-go]'), function(b){
+  b.addEventListener('click', function(){ go(b.dataset.go); });
+});
+$('btnBack').addEventListener('click', function(){ go('round'); });
+
+/* ============================================================
+   Sheets
+   ============================================================ */
+function openSheet(id){ $('scrim').classList.add('on'); $(id).classList.add('on'); $('toast').classList.add('high'); }
+function closeSheets(){
+  $('scrim').classList.remove('on');
+  ['shCapture','shVerify','shSkip','shSos'].forEach(function(i){ $(i).classList.remove('on'); });
+}
+$('scrim').addEventListener('click', closeSheets);
+
+var toastT;
+function toast(msg){
+  var t=$('toast'); t.innerHTML=msg;
+  t.classList.toggle('high', $('scrim').classList.contains('on'));
+  t.classList.add('on');
+  clearTimeout(toastT); toastT=setTimeout(function(){ t.classList.remove('on'); }, 2300);
+}
+
+/* ============================================================
+   Outbox. Write local, drain when a network appears.
+   ============================================================ */
+function enqueue(kind, label){
+  var rec = { id:'R'+(1000+S.seq++), kind:kind, label:label, st: S.online?'sending':'pending', tries:0,
+              at:nowStr() };
+  S.outbox.unshift(rec);
+  renderStrip(); renderLocker();
+  if(S.online) setTimeout(function(){ drainOne(rec); }, 900 + Math.random()*700);
+  return rec;
+}
+function drainOne(rec){
+  if(!S.online){ rec.st='pending'; renderStrip(); renderLocker(); return; }
+  rec.st='done'; rec.tries++;
+  renderStrip(); renderLocker();
+}
+function drainAll(){
+  var pend = S.outbox.filter(function(r){ return r.st!=='done'; });
+  if(!pend.length) return;
+  pend.forEach(function(r,i){
+    r.st='sending';
+    setTimeout(function(){ drainOne(r); }, 500 + i*500);
+  });
+  renderStrip(); renderLocker();
+  toast('<b>Sending '+pend.length+' record'+(pend.length>1?'s':'')+'.</b> Each keeps its own identity, so nothing duplicates.');
+}
+function pendingCount(){ return S.outbox.filter(function(r){ return r.st!=='done'; }).length; }
+
+/* ============================================================
+   Renderers
+   ============================================================ */
+function nowStr(){
+  var d=new Date(); var p=function(n){ return (n<10?'0':'')+n; };
+  return p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());
+}
+function renderStrip(){
+  var n = pendingCount();
+  $('strip').classList.toggle('offline', !S.online);
+  $('qCount').textContent = n ? (n+' waiting to send') : (S.outbox.length ? 'All '+S.outbox.length+' sent' : 'Nothing waiting');
+  $('stripMode').textContent = S.mode==='opencast' ? 'Opencast' : 'Underground';
+  $('netTxt').textContent = S.online ? 'LTE' : 'No signal';
+  $('netTxt').className = S.online ? '' : 'off';
+  var b=$('tabSyncBdg');
+  if(n){ b.style.display='block'; b.textContent=n; } else b.style.display='none';
+}
+function counts(){
+  var done = S.points.filter(function(p){ return p.st!=='pending'; }).length;
+  return { done:done, total:S.points.length };
+}
+function renderHome(){
+  var c = counts();
+  var next = S.points.filter(function(p){ return p.st==='pending'; })[0];
+  $('primBar').style.width = Math.round(c.done/c.total*100)+'%';
+  if(next){
+    $('primK').textContent='Statutory round';
+    $('primT').textContent = c.done ? 'Continue round' : 'Start round';
+    $('primN').innerHTML = c.done+' of '+c.total+' points done &middot; next <b>'+next.name+'</b>';
+    $('primaryBtn').classList.remove('done');
+    $('primaryBtn').dataset.go='round';
+  } else {
+    $('primK').textContent='Round complete';
+    $('primT').textContent='Open shift report';
+    $('primN').innerHTML = c.total+' of '+c.total+' points recorded &middot; <b>sign and submit</b>';
+    $('primaryBtn').classList.add('done');
+    $('primaryBtn').dataset.go='report';
+  }
+  var mine = S.capas.filter(function(c){ return c.role==='mine'; });
+  var ver  = S.capas.filter(function(c){ return c.role==='verify'; });
+  $('actCnt').textContent = S.capas.length;
+  $('tabActBdg').textContent = S.capas.length;
+  $('homeActions').innerHTML = S.capas.slice(0,3).map(function(c){
+    return rowHTML(c.sev==='Critical'?'crit':(c.sev==='High'?'crit':'warn'),
+      c.id+' '+(c.role==='verify'?'verify':'close'), c.t+' · '+c.loc, c.due, c.due==='Today'?'crit':'');
+  }).join('');
+  $('homeHandover').innerHTML = S.handover.map(function(h){
+    return rowHTML('mute', h.t, h.d, '', '');
+  }).join('');
+  $('ugBan').style.display = S.mode==='underground' ? 'block' : 'none';
+  $('meMode').textContent = S.mode==='opencast' ? 'Opencast' : 'Underground';
+  $('modeTxt').textContent = S.mode==='opencast' ? 'Opencast, GPS location proof' : 'Underground, tag scan only';
+}
+function rowHTML(dot, title, sub, meta, metaCls){
+  return '<div class="lrow"><span class="dt '+dot+'"></span><span class="tx"><b>'+title+'</b>'+
+    (sub?'<small>'+sub+'</small>':'')+'</span>'+(meta?'<span class="mt '+metaCls+'">'+meta+'</span>':'')+'</div>';
+}
+function renderRound(){
+  var c = counts();
+  $('roundLbl').textContent = c.done+' of '+c.total+' done';
+  var nextId = (S.points.filter(function(p){ return p.st==='pending'; })[0]||{}).id;
+  $('pointList').innerHTML = S.points.map(function(p){
+    var cls = p.st==='done'?'done':(p.st==='issue'?'issue':(p.st==='skip'?'skip':(p.id===nextId?'next':'')));
+    var mark = p.st==='done'?'&#10003;':(p.st==='issue'?'!':(p.st==='skip'?'&ndash;':''));
+    var meta = p.st==='pending' ? '<span class="pill mute">To do</span>'
+             : p.st==='issue'   ? '<span class="pill crit">Issue '+p.at+'</span>'
+             : p.st==='skip'    ? '<span class="pill mute">Not reached</span>'
+             : '<span class="pill ok">'+p.at+'</span>';
+    return '<button class="pt '+cls+'" data-pt="'+p.id+'"><span class="ix">'+mark+'</span>'+
+      '<span class="pb"><b>'+p.name+'</b><small>'+p.sec+' &middot; '+p.tag+(p.note?' &middot; '+p.note:'')+'</small></span>'+
+      '<span class="pm">'+meta+'</span></button>';
+  }).join('');
+  [].forEach.call($('pointList').children, function(b){
+    b.addEventListener('click', function(){ openPoint(b.dataset.pt); });
+  });
+  $('roundBan').innerHTML = S.mode==='opencast'
+    ? '<b>Location proof required.</b> A point can only be marked done from inside the lease boundary. Points you skip are recorded with the reason, not hidden.'
+    : '<b>Tag scan required.</b> GPS does not work underground, so presence is proved by scanning the NFC or QR tag fixed at each point.';
+}
+function renderActions(){
+  var mine = S.capas.filter(function(c){ return c.role==='mine'; });
+  var ver  = S.capas.filter(function(c){ return c.role==='verify'; });
+  $('mineLbl').textContent = mine.length+' open';
+  $('actMine').innerHTML = mine.length ? mine.map(function(c){
+    return '<button class="lrow" data-capa="'+c.id+'"><span class="dt '+(c.sev==='Critical'||c.sev==='High'?'crit':'warn')+'"></span>'+
+      '<span class="tx"><b>'+c.id+' &middot; '+c.t+'</b><small>'+c.loc+' &middot; '+c.sev+'</small></span>'+
+      '<span class="mt">'+c.due+'</span>'+
+      '<svg class="chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>';
+  }).join('') : '<div class="empty">Nothing assigned to you.</div>';
+  $('actVerify').innerHTML = ver.length ? ver.map(function(c){
+    var self = c.closedBy==='B. Oraon';
+    return '<button class="lrow" data-verify="'+c.id+'"><span class="dt '+(self?'mute':'crit')+'"></span>'+
+      '<span class="tx"><b>'+c.id+' &middot; '+c.t+'</b><small>Closed by '+c.closedBy+(self?' — that is you':'')+'</small></span>'+
+      (self?'<span class="pill mute">Blocked</span>':'<span class="mt crit">'+c.due+'</span>')+
+      '<svg class="chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>';
+  }).join('') : '<div class="empty">Nothing to verify.</div>';
+  [].forEach.call($('actVerify').querySelectorAll('[data-verify]'), function(b){
+    b.addEventListener('click', function(){ openVerify(b.dataset.verify); });
+  });
+  [].forEach.call($('actMine').querySelectorAll('[data-capa]'), function(b){
+    b.addEventListener('click', function(){
+      var c = S.capas.filter(function(x){ return x.id===b.dataset.capa; })[0];
+      openCapture('Close '+c.id, c.loc);
+    });
+  });
+}
+function renderHandover(){
+  $('hoIn').innerHTML = S.handover.map(function(h){
+    return rowHTML('warn', h.t, h.d, '', '');
+  }).join('');
+}
+function renderCerts(){
+  $('certList').innerHTML = S.certs.map(function(c){
+    return rowHTML(c.st==='ok'?'ok':'warn', c.t, c.d, '', '');
+  }).join('');
+}
+function renderLocker(){
+  var n = pendingCount();
+  $('lockLbl').textContent = S.outbox.length ? (n+' waiting, '+(S.outbox.length-n)+' sent') : 'Empty';
+  $('lockList').innerHTML = S.outbox.length ? S.outbox.map(function(r){
+    var cls = r.st==='done'?'sent':(r.st==='sending'?'pend':'pend');
+    var mark = r.st==='done'?'&#10003;':(r.st==='sending'?'&#8226;&#8226;':'&#8987;');
+    var lab = r.st==='done'?'Sent and sealed':(r.st==='sending'?'Sending':'Waiting for a network');
+    return '<div class="q-item"><span class="st '+cls+'">'+mark+'</span>'+
+      '<span class="qb"><b>'+r.label+'</b><small>'+r.id+' &middot; '+r.at+' &middot; '+lab+'</small></span></div>';
+  }).join('') : '<div class="empty">Nothing captured yet this shift.</div>';
+  $('lockBan').innerHTML = S.online
+    ? '<b>Nothing is lost when there is no signal.</b> Records are written to the phone first and sent when a network returns. Each keeps its own identity, so a retry never creates a duplicate.'
+    : '<b>No signal.</b> '+n+' record'+(n===1?'':'s')+' held on the phone. They will go as soon as a network returns. Keep working.';
+}
+function renderAll(){ renderStrip(); renderHome(); renderRound(); renderActions(); renderHandover(); renderCerts(); renderLocker(); }
+
+/* ============================================================
+   Point flow
+   ============================================================ */
+function openPoint(id){
+  var p = S.points.filter(function(x){ return x.id===id; })[0];
+  S.activePoint = p;
+  $('ptName').textContent = p.name;
+  $('ptTag').textContent = p.tag;
+  $('ptMeta').style.display='none';
+  $('chkCard').style.display='none';
+  $('btnPtDone').style.display='none';
+  $('btnCheckin').style.display='flex';
+  var ug = S.mode==='underground';
+  $('checkinTxt').textContent = ug ? 'Scan the tag at this point' : (S.hi?HI.checkinTxt[1]:HI.checkinTxt[0]);
+  $('ptHint').textContent = ug
+    ? 'Hold the handheld near the tag fixed at this point. GPS does not work here.'
+    : 'Stand at the point and check in. Your location is compared with the lease boundary.';
+  $('chkList').innerHTML = S.checks.map(function(q,i){
+    return '<div class="chk"><div class="q">'+q+'</div><div class="opts" data-ci="'+i+'">'+
+      '<button class="okb" aria-pressed="false">In order</button>'+
+      '<button class="nob" aria-pressed="false">Not OK</button></div></div>';
+  }).join('');
+  [].forEach.call($('chkList').querySelectorAll('.opts'), function(grp){
+    [].forEach.call(grp.children, function(btn){
+      btn.addEventListener('click', function(){
+        [].forEach.call(grp.children, function(b){ b.setAttribute('aria-pressed','false'); });
+        btn.setAttribute('aria-pressed','true');
+        if(btn.classList.contains('nob')){
+          openCapture('Observation', S.activePoint.name, S.checks[grp.dataset.ci]);
+        }
+        var answered = $('chkList').querySelectorAll('[aria-pressed="true"]').length;
+        $('btnPtDone').style.display = answered===S.checks.length ? 'flex' : 'none';
+      });
+    });
+  });
+  go('point');
+}
+$('btnCheckin').addEventListener('click', function(){
+  var ug = S.mode==='underground';
+  $('mMethod').textContent = ug ? 'NFC tag '+S.activePoint.tag : 'GPS';
+  $('mCoord').textContent  = ug ? 'Not available underground' : '20.041'+(Math.floor(Math.random()*9))+' N, 78.993'+(Math.floor(Math.random()*9))+' E';
+  $('mAcc').textContent    = ug ? 'Tag is a fixed point' : (3+Math.floor(Math.random()*4))+' m';
+  $('mFence').textContent  = 'Yes';
+  $('mTime').textContent   = nowStr();
+  $('ptMeta').style.display='block';
+  $('chkCard').style.display='block';
+  $('btnCheckin').style.display='none';
+  toast(ug ? '<b>Tag read.</b> Presence at '+S.activePoint.tag+' recorded.' : '<b>Checked in.</b> Inside the lease boundary.');
+});
+$('btnPtDone').addEventListener('click', function(){
+  var bad = $('chkList').querySelectorAll('.nob[aria-pressed="true"]').length;
+  S.activePoint.st = bad ? 'issue' : 'done';
+  S.activePoint.at = nowStr().slice(0,5);
+  if(bad) S.activePoint.note = bad+' check'+(bad>1?'s':'')+' not OK';
+  enqueue('point','Point recorded: '+S.activePoint.name);
+  renderAll();
+  var next = S.points.filter(function(p){ return p.st==='pending'; })[0];
+  if(next){ openPoint(next.id); toast('<b>Point saved.</b> Next: '+next.name); }
+  else { go('report'); toast('<b>Round complete.</b> Your shift report is ready to sign.'); }
+});
+$('btnPtSkip').addEventListener('click', function(){ openSheet('shSkip'); });
+$('btnSkipCancel').addEventListener('click', closeSheets);
+$('btnSkipSave').addEventListener('click', function(){
+  S.activePoint.st='skip';
+  S.activePoint.at=nowStr().slice(0,5);
+  S.activePoint.note=$('skReason').value;
+  enqueue('skip','Point not reached: '+S.activePoint.name);
+  closeSheets(); renderAll(); go('round');
+  setTimeout(function(){ toast('<b>Recorded.</b> It will appear on your shift report with the reason.'); },30);
+});
+
+/* ============================================================
+   Capture
+   ============================================================ */
+function openCapture(kind, where, prefill){
+  S.capture = { kind:kind, where:where||'Not at a round point', sev:null, voice:0, photos:[], text:prefill||'' };
+  $('capTitle').textContent = kind;
+  $('capSub').textContent = S.capture.where+' · Shift B';
+  $('capText').value = prefill ? prefill+' — not in order' : '';
+  $('evList').innerHTML='';
+  [].forEach.call($('sevPick').children, function(b){ b.setAttribute('aria-pressed','false'); });
+  if(prefill) { S.capture.sev='High'; $('sevPick').querySelector('[data-s="High"]').setAttribute('aria-pressed','true'); }
+  $('cmPoint').textContent = S.capture.where;
+  $('cmLoc').textContent = S.mode==='underground' ? 'Tag '+(S.activePoint?S.activePoint.tag:'—') : '20.0417 N, 78.9932 E · 4 m';
+  $('cmFence').textContent = 'Yes';
+  $('cmTime').textContent = nowStr();
+  $('cmHash').textContent = 'none yet';
+  $('cmNet').textContent = S.online ? 'Online' : 'No signal, will queue';
+  $('photoTxt').textContent = S.mode==='underground' ? 'Camera off in underground mode' : (S.hi?HI.photoTxt[1]:HI.photoTxt[0]);
+  $('btnPhoto').disabled = S.mode==='underground';
+  openSheet('shCapture');
+}
+[].forEach.call(document.querySelectorAll('[data-cap]'), function(b){
+  b.addEventListener('click', function(){ openCapture(b.dataset.cap, S.activePoint?S.activePoint.name:'Not at a round point'); });
+});
+$('btnCapCancel').addEventListener('click', closeSheets);
+
+/* hold to talk */
+var recT=null, recN=0;
+function startRec(e){
+  e.preventDefault();
+  if(recT) return;
+  recN=0;
+  $('voiceBtn').classList.add('rec');
+  $('voiceTxt').innerHTML='<span class="waves"><i></i><i></i><i></i><i></i><i></i></span>';
+  $('voiceSub').textContent='0.0 s — release to stop';
+  recT=setInterval(function(){ recN+=0.1; $('voiceSub').textContent=recN.toFixed(1)+' s — release to stop'; },100);
+}
+function stopRec(){
+  if(!recT) return;
+  clearInterval(recT); recT=null;
+  $('voiceBtn').classList.remove('rec');
+  $('voiceTxt').textContent = S.hi?HI.voiceTxt[1]:HI.voiceTxt[0];
+  $('voiceSub').textContent = S.hi?HI.voiceSub[1]:HI.voiceSub[0];
+  if(recN<0.4) return;
+  S.capture.voice = recN;
+  addEv('voice','Voice note '+recN.toFixed(1)+'s','queued for transcription');
+}
+['mousedown','touchstart'].forEach(function(ev){ $('voiceBtn').addEventListener(ev, startRec, {passive:false}); });
+['mouseup','mouseleave','touchend','touchcancel'].forEach(function(ev){ $('voiceBtn').addEventListener(ev, stopRec); });
+
+function addEv(type, label, sub){
+  var icon = type==='voice'
+    ? '<svg viewBox="0 0 24 24"><path d="M12 3a3 3 0 013 3v6a3 3 0 01-6 0V6a3 3 0 013-3z"/><path d="M5 11a7 7 0 0014 0"/></svg>'
+    : '<svg viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></svg>';
+  var d=document.createElement('span');
+  d.className='evc';
+  d.innerHTML = icon+'<span>'+label+'<span class="hx">'+sub+'</span></span>';
+  $('evList').appendChild(d);
+}
+$('btnPhoto').addEventListener('click', function(){
+  if(S.capture.photos.length>=3){ toast('Three photos is the limit. It keeps the upload small.'); return; }
+  var h = Math.random().toString(16).slice(2,8)+'…'+Math.random().toString(16).slice(2,6);
+  S.capture.photos.push(h);
+  addEv('photo','Photo '+S.capture.photos.length, h);
+  $('cmHash').textContent = h;
+  toast('<b>Fingerprint taken at capture.</b> If the file changes later, it will not match.');
+});
+[].forEach.call($('sevPick').children, function(b){
+  b.addEventListener('click', function(){
+    [].forEach.call($('sevPick').children, function(x){ x.setAttribute('aria-pressed','false'); });
+    b.setAttribute('aria-pressed','true');
+    S.capture.sev = b.dataset.s;
+  });
+});
+$('btnCapSave').addEventListener('click', function(){
+  var c=S.capture;
+  if(!c.sev && c.kind.indexOf('Close')!==0){ toast('Choose how serious it is first.'); return; }
+  if(!c.voice && !c.photos.length && !$('capText').value.trim()){
+    toast('Add a voice note, a photo, or a line of text.'); return;
+  }
+  S.captured.push({kind:c.kind, where:c.where, sev:c.sev, text:$('capText').value.trim()||'Voice note', at:nowStr().slice(0,5)});
+  var msg;
+  if(c.kind.indexOf('Close')===0){
+    var id=c.kind.slice(6);
+    S.capas = S.capas.filter(function(x){ return x.id!==id; });
+    enqueue('capa','Closure evidence for '+id);
+    msg = '<b>Closed and sent for verification.</b> A different official must verify it.';
+  } else {
+    enqueue('obs', c.kind+': '+(c.where||''));
+    msg = S.online
+      ? '<b>Saved and sending.</b> Sealed once it reaches the server.'
+      : '<b>Saved on the phone.</b> No signal, so it is waiting. Nothing is lost.';
+  }
+  closeSheets(); renderAll(); toast(msg);
+});
+
+/* ============================================================
+   Verify — maker-checker
+   ============================================================ */
+function openVerify(id){
+  var c = S.capas.filter(function(x){ return x.id===id; })[0];
+  S.verifying = c;
+  $('vfTitle').textContent = 'Verify '+c.id;
+  $('vfSub').textContent = c.t+' · '+c.loc+' · closed by '+c.closedBy;
+  var self = c.closedBy==='B. Oraon';
+  $('vfWarn').style.display = self?'block':'none';
+  $('btnVfOk').disabled = self;
+  openSheet('shVerify');
+}
+$('btnVfOk').addEventListener('click', function(){
+  S.capas = S.capas.filter(function(x){ return x.id!==S.verifying.id; });
+  enqueue('verify','Verified closure of '+S.verifying.id);
+  closeSheets(); renderAll();
+  setTimeout(function(){ toast('<b>Verified.</b> Your name and the time are on the record.'); },30);
+});
+$('btnVfNo').addEventListener('click', function(){
+  enqueue('reopen','Reopened '+S.verifying.id);
+  closeSheets(); renderAll();
+  setTimeout(function(){ toast('<b>Reopened.</b> It goes back to the owner with your reason.'); },30);
+});
+
+/* ============================================================
+   Shift report
+   ============================================================ */
+function renderReport(){
+  var done = S.points.filter(function(p){ return p.st==='done'; });
+  var iss  = S.points.filter(function(p){ return p.st==='issue'; });
+  var skip = S.points.filter(function(p){ return p.st==='skip'; });
+  var pend = S.points.filter(function(p){ return p.st==='pending'; });
+  var html = '<div class="rh"><b>Daily Report of Inspection by Overman</b>'+
+    '<small>Opencast working &middot; Regulation 47(7)(d), Coal Mines Regulations 2017</small></div>'+
+    '<dl><dt>Mine</dt><dd>Demo OCP-1, Wani Area</dd>'+
+    '<dt>Owner</dt><dd>Western Coalfields Limited</dd>'+
+    '<dt>Date</dt><dd>10 September 2026</dd>'+
+    '<dt>Shift</dt><dd>B, 14:00 to 22:00</dd>'+
+    '<dt>Charge taken from</dt><dd>S. Ekka, Shift A</dd>'+
+    '<dt>District</dt><dd>Benches 3 to 5, Haul Road North, Dump-3, Sump-1</dd></dl>'+
+    '<p style="margin:0 0 4px;font-size:12.5px">I, being duly appointed and authorised for the purpose, declare that I have carefully examined the workings and have to report as follows.</p>';
+
+  html += '<div class="sec">Places inspected ('+(done.length+iss.length)+')</div><ol>';
+  done.concat(iss).forEach(function(p){
+    html += '<li>'+p.name+' — '+(p.st==='issue'?'<b style="color:var(--red)">defect noted</b>':'in order')+' at '+p.at+'</li>';
+  });
+  html += '</ol>';
+
+  if(skip.length || pend.length){
+    html += '<div class="sec" style="color:var(--red)">Places not inspected ('+(skip.length+pend.length)+')</div><ul>';
+    skip.forEach(function(p){ html += '<li>'+p.name+' — '+(p.note||'reason recorded')+'</li>'; });
+    pend.forEach(function(p){ html += '<li>'+p.name+' — <b style="color:var(--red)">round not completed</b></li>'; });
+    html += '</ul>';
+  }
+
+  html += '<div class="sec">Defects and action taken ('+S.captured.length+')</div>';
+  if(S.captured.length){
+    html += '<ol>'+S.captured.map(function(c){
+      return '<li>'+(c.text||c.kind)+' at '+c.where+', '+(c.sev||'noted')+', recorded '+c.at+'</li>';
+    }).join('')+'</ol>';
+  } else {
+    html += '<p style="font-size:12.5px;margin:0">Nil.</p>';
+  }
+
+  html += '<div class="sec">Handed over to</div><p style="font-size:12.5px;margin:0">'+
+    'Shift C official, 22:00. '+(($('hoOut').value||'').trim() || 'Handover note not yet written.')+'</p>';
+
+  $('repBody').innerHTML = html;
+  $('btnSubmitRep').disabled = !(S.signed && pend.length===0);
+  $('btnSubmitRep').textContent = pend.length ? 'Finish the round first ('+pend.length+' left)'
+                                : (S.signed ? 'Sign and submit' : 'Sign above to submit');
+}
+/* signature pad */
+(function(){
+  var cv=$('sigPad'), cx=cv.getContext('2d'), drawing=false;
+  cx.strokeStyle='#1E2A31'; cx.lineWidth=2; cx.lineCap='round'; cx.lineJoin='round';
+  function pos(e){
+    var r=cv.getBoundingClientRect();
+    var t = e.touches? e.touches[0] : e;
+    return { x:(t.clientX-r.left)*(cv.width/r.width), y:(t.clientY-r.top)*(cv.height/r.height) };
+  }
+  function down(e){ e.preventDefault(); drawing=true; var p=pos(e); cx.beginPath(); cx.moveTo(p.x,p.y); }
+  function move(e){ if(!drawing) return; e.preventDefault(); var p=pos(e); cx.lineTo(p.x,p.y); cx.stroke(); S.signed=true; renderReport(); }
+  function up(){ drawing=false; }
+  ['mousedown','touchstart'].forEach(function(ev){ cv.addEventListener(ev,down,{passive:false}); });
+  ['mousemove','touchmove'].forEach(function(ev){ cv.addEventListener(ev,move,{passive:false}); });
+  ['mouseup','mouseleave','touchend'].forEach(function(ev){ cv.addEventListener(ev,up); });
+  $('btnClearSig').addEventListener('click', function(){ cx.clearRect(0,0,cv.width,cv.height); S.signed=false; renderReport(); });
+})();
+$('btnSubmitRep').addEventListener('click', function(){
+  enqueue('report','Overman shift report, Shift B');
+  toast('<b>Submitted.</b> Sent to the mine manager, and the prescribed form is ready to print for the paper register.');
+  renderAll();
+});
+
+/* handover */
+$('btnHoSave').addEventListener('click', function(){
+  if(!$('hoOut').value.trim()){ toast('Write or record what the next shift must know.'); return; }
+  enqueue('handover','Handover note to Shift C');
+  toast('<b>Handover saved.</b> Shift C sees it the moment they sign in.');
+  renderAll();
+});
+$('btnHoVoice').addEventListener('click', function(){
+  $('hoOut').value = 'Water still building at the Dump-3 toe. Pump ran four hours this shift. Berm on Haul Road North at 1.2 km is low, CAPA raised, do not allow dumpers on the outer lane until it is built up.';
+  toast('<b>Recorded and transcribed.</b> Edit it if the words came out wrong.');
+});
+
+/* locker retry */
+$('btnRetry').addEventListener('click', function(){
+  if(!S.online){ toast('Still no signal. Records stay safe on the phone.'); return; }
+  drainAll();
+});
+
+/* ============================================================
+   SOS
+   ============================================================ */
+$('btnSos').addEventListener('click', function(){ openSheet('shSos'); });
+$('btnSosCancel').addEventListener('click', closeSheets);
+(function(){
+  var t=null, held=0;
+  function start(e){ e.preventDefault(); held=0;
+    t=setInterval(function(){ held+=0.1;
+      $('btnSosGo').textContent='Hold… '+held.toFixed(1)+'s';
+      if(held>=1.5){ clearInterval(t); t=null;
+        $('btnSosGo').textContent='Alert sent';
+        enqueue('sos','Emergency alert with position');
+        closeSheets(); renderAll();
+        setTimeout(function(){ toast('<b>Alert sent.</b> Control room, manager and rescue station notified with your position.'); },30);
+        setTimeout(function(){ $('btnSosGo').textContent='Hold to confirm'; },800);
+      }
+    },100);
+  }
+  function end(){ if(t){ clearInterval(t); t=null; $('btnSosGo').textContent='Hold to confirm'; } }
+  ['mousedown','touchstart'].forEach(function(ev){ $('btnSosGo').addEventListener(ev,start,{passive:false}); });
+  ['mouseup','mouseleave','touchend'].forEach(function(ev){ $('btnSosGo').addEventListener(ev,end); });
+})();
+
+/* ============================================================
+   Demo controls
+   ============================================================ */
+$('swNet').addEventListener('click', function(){
+  S.online = !S.online;
+  this.setAttribute('aria-checked', S.online?'true':'false');
+  renderStrip(); renderLocker();
+  if(S.online){ drainAll(); }
+  else toast('<b>No signal.</b> Keep working. Everything is written to the phone first.');
+});
+$('swMode').addEventListener('click', function(){
+  S.mode = S.mode==='opencast' ? 'underground' : 'opencast';
+  this.setAttribute('aria-checked', S.mode==='underground'?'true':'false');
+  renderAll();
+  toast(S.mode==='underground'
+    ? '<b>Underground mode.</b> GPS and camera off. Presence is proved by scanning tags.'
+    : '<b>Opencast mode.</b> GPS and camera on.');
+});
+$('swLang').addEventListener('click', function(){
+  S.hi = !S.hi;
+  this.setAttribute('aria-checked', S.hi?'true':'false');
+  ['tl1','tl2','tl3','voiceTxt','voiceSub','photoTxt','checkinTxt'].forEach(function(k){
+    var el=$(k); if(el && HI[k]) el.textContent = HI[k][S.hi?1:0];
+  });
+});
+$('btnFill').addEventListener('click', function(){
+  S.points.forEach(function(p){
+    if(p.st==='pending'){ p.st='done'; p.at=nowStr().slice(0,5); enqueue('point','Point recorded: '+p.name); }
+  });
+  renderAll(); go('report');
+  toast('<b>Round completed.</b> Sign the report to submit it.');
+});
+$('btnReset').addEventListener('click', function(){ location.reload(); });
+
+/* clock */
+setInterval(function(){
+  var d=new Date(), p=function(n){ return (n<10?'0':'')+n; };
+  $('clock').textContent = p(d.getHours())+':'+p(d.getMinutes());
+},1000);
+
+renderAll();
+go('home');
+})();
+</script>
+</body>
+</html>

@@ -1,5 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../database/database.dart';
 import '../../models/user_role.dart';
+import '../../services/location_service.dart';
+import '../../services/mesh_sos_service.dart';
 import '../../theme/app_theme.dart';
 import '../shared/observations_tab.dart';
 import '../observation_form.dart';
@@ -17,125 +22,297 @@ class SirdarHome extends StatefulWidget {
 
 class _SirdarHomeState extends State<SirdarHome> {
   int _selectedIndex = 0;
+  bool _sosActive = false;
+  String _sosStatusMessage = '';
+  String _currentMode = 'opencast';
 
-  final List<Widget> _tabs = const [
-    SirdarHomeTab(),
-    ObservationsTab(), // Acts as 'Tasks'
-    SirdarMapTab(),
-    SirdarProfileTab(),
-  ];
+  // Real-time pending count from Drift stream
+  int _pendingCount = 0;
+  Timer? _pendingCountTimer;
+
+  // GPS confidence from LocationService
+  String _locationConfidence = 'acquiring...';
+  Timer? _locationTimer;
+
+  late final List<Widget> _tabs;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabs = const [
+      SirdarHomeTab(),
+      ObservationsTab(),
+      SirdarMapTab(),
+      SirdarProfileTab(),
+    ];
+    _startPollingPendingCount();
+    _startPollingLocationStatus();
+  }
+
+  @override
+  void dispose() {
+    _pendingCountTimer?.cancel();
+    _locationTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startPollingPendingCount() {
+    _refreshPendingCount();
+    _pendingCountTimer = Timer.periodic(const Duration(seconds: 10), (_) => _refreshPendingCount());
+  }
+
+  Future<void> _refreshPendingCount() async {
+    final db = Provider.of<AppDatabase?>(context, listen: false);
+    if (db == null || !mounted) return;
+    try {
+      final count = await db.getPendingCount();
+      if (mounted) setState(() => _pendingCount = count);
+    } catch (_) {}
+  }
+
+  void _startPollingLocationStatus() {
+    _locationTimer = Timer.periodic(const Duration(seconds: 30), (_) async {
+      final locSvc = Provider.of<LocationService?>(context, listen: false);
+      if (locSvc == null || !mounted) return;
+      final snap = await locSvc.getCurrentSnapshot();
+      if (mounted) {
+        setState(() {
+          _locationConfidence = snap.confidence == 'gps_live' ? 'GPS live' : 'Last known';
+        });
+      }
+    });
+  }
+
+  Future<void> _triggerSos() async {
+    final sosSvc = Provider.of<MeshSosService?>(context, listen: false);
+    if (sosSvc == null) {
+      _showSosResult('SOS service unavailable. Call +91-112.');
+      return;
+    }
+    setState(() {
+      _sosActive = true;
+      _sosStatusMessage = 'Broadcasting SOS…';
+    });
+
+    try {
+      final result = await sosSvc.triggerSos();
+      if (mounted) {
+        setState(() {
+          _sosStatusMessage = result.anySent
+              ? '✓ SOS sent via ${result.channelSummary}'
+              : 'SOS stored — will send when online';
+        });
+        // Keep the red SOS sheet visible for 5 seconds, then collapse
+        Future.delayed(const Duration(seconds: 5), () {
+          if (mounted) setState(() => _sosActive = false);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _sosStatusMessage = 'SOS stored locally — syncs when connected';
+        });
+        Future.delayed(const Duration(seconds: 5), () {
+          if (mounted) setState(() => _sosActive = false);
+        });
+      }
+    }
+  }
+
+  void _showSosResult(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: AppTheme.redDanger),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.offWhiteBackground,
-      extendBody: true, // Allows the FAB to sit nicely on the notch
+      backgroundColor: AppTheme.paper,
       body: SafeArea(
-        bottom: false, // Don't pad the bottom so IndexedStack fills the space under nav
+        bottom: false,
         child: Column(
           children: [
-            // Sync Status Bar
+            // ── Status bar
             Container(
-              width: double.infinity,
-              color: AppTheme.amberAccent,
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: const Text(
-                "Offline · 3 records queued for sync",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
+              height: 30,
+              color: AppTheme.graphite,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    _timeNow(),
+                    style: const TextStyle(color: Color(0xFFCFD9DD), fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                  const Row(children: [
+                    Icon(Icons.signal_cellular_4_bar, size: 14, color: Color(0xFFCFD9DD)),
+                    SizedBox(width: 6),
+                    Icon(Icons.battery_5_bar, size: 14, color: Color(0xFFCFD9DD)),
+                  ]),
+                ],
               ),
             ),
-            
-            if (_selectedIndex == 0) ...[
-              // Custom Header - Only on Home Tab
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: Row(
-                  children: [
-                    const CircleAvatar(
-                      radius: 20,
-                      backgroundColor: AppTheme.amberAccent,
-                      foregroundImage: NetworkImage("https://i.pravatar.cc/150?u=siram"),
-                      child: Text("SR", style: TextStyle(color: Colors.white)),
-                    ),
-                    const SizedBox(width: 12),
-                    Column(
+
+            // ── App bar
+            Container(
+              color: AppTheme.graphite,
+              padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          widget.user.role.userName,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                        const Text('Shift B', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.white)),
+                        Text('Demo OCP-1 · Wani Area', style: TextStyle(fontSize: 11.5, color: Colors.grey[400])),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.terrain, color: Colors.white, size: 20),
+                    onPressed: () {
+                      setState(() => _currentMode = _currentMode == 'opencast' ? 'underground' : 'opencast');
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text('Switched to ${_currentMode.toUpperCase()} mode'),
+                        duration: const Duration(milliseconds: 1000),
+                      ));
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            // ── Sync strip (real pending count + GPS confidence)
+            Container(
+              color: AppTheme.graphite2,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withAlpha(23),
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 7,
+                          height: 7,
+                          decoration: BoxDecoration(
+                            color: _pendingCount > 0 ? AppTheme.amberAccent : AppTheme.greenVerified,
+                            shape: BoxShape.circle,
                           ),
                         ),
+                        const SizedBox(width: 5),
                         Text(
-                          "Sirdar · District 4",
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 12,
-                          ),
+                          _pendingCount > 0 ? '$_pendingCount waiting to send' : 'All synced',
+                          style: const TextStyle(color: Color(0xFFCFD9DD), fontSize: 12, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
-                    const Spacer(),
-                    IconButton(
-                      icon: Icon(Icons.notifications_none, color: Colors.blueGrey[300]),
-                      onPressed: () {},
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.menu, color: Colors.blueGrey[300]),
-                      onPressed: () {},
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '📍 $_locationConfidence',
+                    style: const TextStyle(color: Color(0xFFCFD9DD), fontSize: 12),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    _currentMode == 'opencast' ? 'Opencast' : 'Underground',
+                    style: const TextStyle(color: Color(0xFFCFD9DD), fontSize: 12),
+                  ),
+                  const Spacer(),
+                  const Text('4h 12m left', style: TextStyle(color: Color(0xFFCFD9DD), fontSize: 12, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+
+            // ── SOS active sheet
+            if (_sosActive)
+              Container(
+                color: AppTheme.redDanger,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                child: Row(
+                  children: [
+                    const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(_sosStatusMessage, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
                     ),
                   ],
                 ),
               ),
-            ],
-            
+
+            // ── Main tab content
             Expanded(
-              child: IndexedStack(
-                index: _selectedIndex,
-                children: _tabs,
-              ),
+              child: IndexedStack(index: _selectedIndex, children: _tabs),
+            ),
+
+            // ── EMERGENCY button + bottom nav
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GestureDetector(
+                  onTap: _triggerSos,
+                  child: Container(
+                    width: double.infinity,
+                    height: 46,
+                    color: _sosActive ? AppTheme.redDanger.withAlpha(180) : AppTheme.redDanger,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.warning, color: Colors.white, size: 17),
+                        const SizedBox(width: 9),
+                        Text(
+                          _sosActive ? 'SOS BROADCASTING...' : 'EMERGENCY',
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1.5, fontSize: 15),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Container(
+                  color: AppTheme.panel,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildBottomTab(0, Icons.home_filled, 'Shift'),
+                      _buildBottomTab(2, Icons.format_list_bulleted, 'Round'),
+                      _buildBottomTab(1, Icons.done_all, 'Actions'),
+                      _buildBottomTab(3, Icons.assignment, 'Report'),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Immediate feedback to show button is active
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Opening Observation Form..."), duration: Duration(milliseconds: 500)),
-          );
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const ObservationFormScreen()),
-          );
-        },
-        backgroundColor: AppTheme.amberAccent,
-        elevation: 6,
-        shape: const CircleBorder(),
-        child: const Icon(Icons.add, color: Colors.white, size: 32),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8,
-        color: Colors.white,
-        child: SizedBox(
-          height: 60,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+    );
+  }
+
+  Widget _buildBottomTab(int index, IconData icon, String label) {
+    final bool isSelected = _selectedIndex == index;
+    return Expanded(
+      child: InkWell(
+        onTap: () => setState(() => _selectedIndex = index),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              _buildNavItem(0, Icons.home, "Home"),
-              _buildNavItem(1, Icons.assignment_outlined, "Tasks"),
-              const SizedBox(width: 40), // Space for FAB
-              _buildNavItem(2, Icons.map_outlined, "Map"),
-              _buildNavItem(3, Icons.person_outline, "Profile"),
+              Icon(icon, size: 21, color: isSelected ? AppTheme.graphite : AppTheme.ink3),
+              const SizedBox(height: 3),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.bold,
+                  color: isSelected ? AppTheme.graphite : AppTheme.ink3,
+                ),
+              ),
             ],
           ),
         ),
@@ -143,27 +320,8 @@ class _SirdarHomeState extends State<SirdarHome> {
     );
   }
 
-  Widget _buildNavItem(int index, IconData icon, String label) {
-    bool isSelected = _selectedIndex == index;
-    return InkWell(
-      onTap: () => setState(() => _selectedIndex = index),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            color: isSelected ? AppTheme.amberAccent : Colors.grey,
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              color: isSelected ? AppTheme.amberAccent : Colors.grey,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            ),
-          ),
-        ],
-      ),
-    );
+  String _timeNow() {
+    final now = DateTime.now();
+    return '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
   }
 }

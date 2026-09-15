@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/user_role.dart';
+import '../../services/mesh_sos_service.dart';
 import '../../theme/app_theme.dart';
 import '../shared/dashboard_tab.dart';
 import '../shared/observations_tab.dart';
@@ -18,6 +20,31 @@ class ContractorHome extends StatefulWidget {
 
 class _ContractorHomeState extends State<ContractorHome> {
   int _selectedIndex = 0;
+  bool _sosActive = false;
+  String _sosStatusMessage = '';
+
+  Future<void> _triggerSos() async {
+    final sosSvc = Provider.of<MeshSosService?>(context, listen: false);
+    if (sosSvc == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('SOS: Call +91-112'), backgroundColor: AppTheme.redDanger),
+      );
+      return;
+    }
+    setState(() { _sosActive = true; _sosStatusMessage = 'Broadcasting SOS…'; });
+    try {
+      final result = await sosSvc.triggerSos();
+      if (mounted) {
+        setState(() { _sosStatusMessage = result.anySent ? '✓ SOS sent via ${result.channelSummary}' : 'SOS stored — syncs when online'; });
+        Future.delayed(const Duration(seconds: 5), () { if (mounted) setState(() => _sosActive = false); });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() { _sosStatusMessage = 'SOS stored locally'; });
+        Future.delayed(const Duration(seconds: 5), () { if (mounted) setState(() => _sosActive = false); });
+      }
+    }
+  }
 
   final List<Widget> _tabs = const [
     DashboardTab(),
@@ -45,43 +72,62 @@ class _ContractorHomeState extends State<ContractorHome> {
                   const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        "CoalGov Admin",
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                      ),
-                      Text(
-                        "Contractor Management Portal",
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
+                      Text('CoalGov Admin', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                      Text('Contractor Management Portal', style: TextStyle(fontSize: 12, color: Colors.grey)),
                     ],
                   ),
                   const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.notifications_none),
-                    onPressed: () {},
-                  ),
+                  IconButton(icon: const Icon(Icons.notifications_none), onPressed: () {}),
                 ],
               ),
             ),
-            
-            // Stats Row
             if (_selectedIndex == 0)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
-                    _buildQuickStat("4", "Active Sites", Colors.blue),
+                    _buildQuickStat('4', 'Active Sites', Colors.blue),
                     const SizedBox(width: 8),
-                    _buildQuickStat("12", "Open CAPAs", Colors.orange),
+                    _buildQuickStat('12', 'Open CAPAs', Colors.orange),
                     const SizedBox(width: 8),
-                    _buildQuickStat("98%", "Safety Score", Colors.green),
+                    _buildQuickStat('98%', 'Safety Score', Colors.green),
                   ],
                 ),
               ),
-
             const SizedBox(height: 16),
-            Expanded(
-              child: IndexedStack(index: _selectedIndex, children: _tabs),
+            // SOS status strip
+            if (_sosActive)
+              Container(
+                color: AppTheme.redDanger,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  children: [
+                    const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
+                    const SizedBox(width: 10),
+                    Expanded(child: Text(_sosStatusMessage, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12))),
+                  ],
+                ),
+              ),
+            Expanded(child: IndexedStack(index: _selectedIndex, children: _tabs)),
+            // EMERGENCY SOS bar
+            GestureDetector(
+              onTap: _triggerSos,
+              child: Container(
+                width: double.infinity,
+                height: 44,
+                color: _sosActive ? AppTheme.redDanger.withAlpha(180) : AppTheme.redDanger,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.warning, color: Colors.white, size: 16),
+                    const SizedBox(width: 8),
+                    Text(
+                      _sosActive ? 'SOS ACTIVE...' : 'EMERGENCY — TAP TO ALERT',
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1.2, fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
