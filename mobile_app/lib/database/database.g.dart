@@ -1573,12 +1573,1290 @@ class GrievancesCompanion extends UpdateCompanion<Grievance> {
   }
 }
 
+class $LocationPingsTable extends LocationPings
+    with TableInfo<$LocationPingsTable, LocationPing> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocationPingsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _clientUuidMeta = const VerificationMeta(
+    'clientUuid',
+  );
+  @override
+  late final GeneratedColumn<String> clientUuid = GeneratedColumn<String>(
+    'client_uuid',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _reportedByMeta = const VerificationMeta(
+    'reportedBy',
+  );
+  @override
+  late final GeneratedColumn<String> reportedBy = GeneratedColumn<String>(
+    'reported_by',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _roleMeta = const VerificationMeta('role');
+  @override
+  late final GeneratedColumn<String> role = GeneratedColumn<String>(
+    'role',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _latMeta = const VerificationMeta('lat');
+  @override
+  late final GeneratedColumn<double> lat = GeneratedColumn<double>(
+    'lat',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lngMeta = const VerificationMeta('lng');
+  @override
+  late final GeneratedColumn<double> lng = GeneratedColumn<double>(
+    'lng',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _accuracyMeta = const VerificationMeta(
+    'accuracy',
+  );
+  @override
+  late final GeneratedColumn<double> accuracy = GeneratedColumn<double>(
+    'accuracy',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _locationConfidenceMeta =
+      const VerificationMeta('locationConfidence');
+  @override
+  late final GeneratedColumn<String> locationConfidence =
+      GeneratedColumn<String>(
+        'location_confidence',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _capturedAtMeta = const VerificationMeta(
+    'capturedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> capturedAt = GeneratedColumn<DateTime>(
+    'captured_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _syncStatusMeta = const VerificationMeta(
+    'syncStatus',
+  );
+  @override
+  late final GeneratedColumn<int> syncStatus = GeneratedColumn<int>(
+    'sync_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    clientUuid,
+    reportedBy,
+    role,
+    lat,
+    lng,
+    accuracy,
+    locationConfidence,
+    capturedAt,
+    syncStatus,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'location_pings';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocationPing> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('client_uuid')) {
+      context.handle(
+        _clientUuidMeta,
+        clientUuid.isAcceptableOrUnknown(data['client_uuid']!, _clientUuidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_clientUuidMeta);
+    }
+    if (data.containsKey('reported_by')) {
+      context.handle(
+        _reportedByMeta,
+        reportedBy.isAcceptableOrUnknown(data['reported_by']!, _reportedByMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_reportedByMeta);
+    }
+    if (data.containsKey('role')) {
+      context.handle(
+        _roleMeta,
+        role.isAcceptableOrUnknown(data['role']!, _roleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_roleMeta);
+    }
+    if (data.containsKey('lat')) {
+      context.handle(
+        _latMeta,
+        lat.isAcceptableOrUnknown(data['lat']!, _latMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_latMeta);
+    }
+    if (data.containsKey('lng')) {
+      context.handle(
+        _lngMeta,
+        lng.isAcceptableOrUnknown(data['lng']!, _lngMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_lngMeta);
+    }
+    if (data.containsKey('accuracy')) {
+      context.handle(
+        _accuracyMeta,
+        accuracy.isAcceptableOrUnknown(data['accuracy']!, _accuracyMeta),
+      );
+    }
+    if (data.containsKey('location_confidence')) {
+      context.handle(
+        _locationConfidenceMeta,
+        locationConfidence.isAcceptableOrUnknown(
+          data['location_confidence']!,
+          _locationConfidenceMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_locationConfidenceMeta);
+    }
+    if (data.containsKey('captured_at')) {
+      context.handle(
+        _capturedAtMeta,
+        capturedAt.isAcceptableOrUnknown(data['captured_at']!, _capturedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_capturedAtMeta);
+    }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+        _syncStatusMeta,
+        syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LocationPing map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocationPing(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      clientUuid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}client_uuid'],
+      )!,
+      reportedBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reported_by'],
+      )!,
+      role: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}role'],
+      )!,
+      lat: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}lat'],
+      )!,
+      lng: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}lng'],
+      )!,
+      accuracy: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}accuracy'],
+      ),
+      locationConfidence: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}location_confidence'],
+      )!,
+      capturedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}captured_at'],
+      )!,
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sync_status'],
+      )!,
+    );
+  }
+
+  @override
+  $LocationPingsTable createAlias(String alias) {
+    return $LocationPingsTable(attachedDatabase, alias);
+  }
+}
+
+class LocationPing extends DataClass implements Insertable<LocationPing> {
+  final int id;
+  final String clientUuid;
+  final String reportedBy;
+  final String role;
+  final double lat;
+  final double lng;
+  final double? accuracy;
+  final String locationConfidence;
+  final DateTime capturedAt;
+  final int syncStatus;
+  const LocationPing({
+    required this.id,
+    required this.clientUuid,
+    required this.reportedBy,
+    required this.role,
+    required this.lat,
+    required this.lng,
+    this.accuracy,
+    required this.locationConfidence,
+    required this.capturedAt,
+    required this.syncStatus,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['client_uuid'] = Variable<String>(clientUuid);
+    map['reported_by'] = Variable<String>(reportedBy);
+    map['role'] = Variable<String>(role);
+    map['lat'] = Variable<double>(lat);
+    map['lng'] = Variable<double>(lng);
+    if (!nullToAbsent || accuracy != null) {
+      map['accuracy'] = Variable<double>(accuracy);
+    }
+    map['location_confidence'] = Variable<String>(locationConfidence);
+    map['captured_at'] = Variable<DateTime>(capturedAt);
+    map['sync_status'] = Variable<int>(syncStatus);
+    return map;
+  }
+
+  LocationPingsCompanion toCompanion(bool nullToAbsent) {
+    return LocationPingsCompanion(
+      id: Value(id),
+      clientUuid: Value(clientUuid),
+      reportedBy: Value(reportedBy),
+      role: Value(role),
+      lat: Value(lat),
+      lng: Value(lng),
+      accuracy: accuracy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(accuracy),
+      locationConfidence: Value(locationConfidence),
+      capturedAt: Value(capturedAt),
+      syncStatus: Value(syncStatus),
+    );
+  }
+
+  factory LocationPing.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocationPing(
+      id: serializer.fromJson<int>(json['id']),
+      clientUuid: serializer.fromJson<String>(json['clientUuid']),
+      reportedBy: serializer.fromJson<String>(json['reportedBy']),
+      role: serializer.fromJson<String>(json['role']),
+      lat: serializer.fromJson<double>(json['lat']),
+      lng: serializer.fromJson<double>(json['lng']),
+      accuracy: serializer.fromJson<double?>(json['accuracy']),
+      locationConfidence: serializer.fromJson<String>(
+        json['locationConfidence'],
+      ),
+      capturedAt: serializer.fromJson<DateTime>(json['capturedAt']),
+      syncStatus: serializer.fromJson<int>(json['syncStatus']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'clientUuid': serializer.toJson<String>(clientUuid),
+      'reportedBy': serializer.toJson<String>(reportedBy),
+      'role': serializer.toJson<String>(role),
+      'lat': serializer.toJson<double>(lat),
+      'lng': serializer.toJson<double>(lng),
+      'accuracy': serializer.toJson<double?>(accuracy),
+      'locationConfidence': serializer.toJson<String>(locationConfidence),
+      'capturedAt': serializer.toJson<DateTime>(capturedAt),
+      'syncStatus': serializer.toJson<int>(syncStatus),
+    };
+  }
+
+  LocationPing copyWith({
+    int? id,
+    String? clientUuid,
+    String? reportedBy,
+    String? role,
+    double? lat,
+    double? lng,
+    Value<double?> accuracy = const Value.absent(),
+    String? locationConfidence,
+    DateTime? capturedAt,
+    int? syncStatus,
+  }) => LocationPing(
+    id: id ?? this.id,
+    clientUuid: clientUuid ?? this.clientUuid,
+    reportedBy: reportedBy ?? this.reportedBy,
+    role: role ?? this.role,
+    lat: lat ?? this.lat,
+    lng: lng ?? this.lng,
+    accuracy: accuracy.present ? accuracy.value : this.accuracy,
+    locationConfidence: locationConfidence ?? this.locationConfidence,
+    capturedAt: capturedAt ?? this.capturedAt,
+    syncStatus: syncStatus ?? this.syncStatus,
+  );
+  LocationPing copyWithCompanion(LocationPingsCompanion data) {
+    return LocationPing(
+      id: data.id.present ? data.id.value : this.id,
+      clientUuid: data.clientUuid.present
+          ? data.clientUuid.value
+          : this.clientUuid,
+      reportedBy: data.reportedBy.present
+          ? data.reportedBy.value
+          : this.reportedBy,
+      role: data.role.present ? data.role.value : this.role,
+      lat: data.lat.present ? data.lat.value : this.lat,
+      lng: data.lng.present ? data.lng.value : this.lng,
+      accuracy: data.accuracy.present ? data.accuracy.value : this.accuracy,
+      locationConfidence: data.locationConfidence.present
+          ? data.locationConfidence.value
+          : this.locationConfidence,
+      capturedAt: data.capturedAt.present
+          ? data.capturedAt.value
+          : this.capturedAt,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocationPing(')
+          ..write('id: $id, ')
+          ..write('clientUuid: $clientUuid, ')
+          ..write('reportedBy: $reportedBy, ')
+          ..write('role: $role, ')
+          ..write('lat: $lat, ')
+          ..write('lng: $lng, ')
+          ..write('accuracy: $accuracy, ')
+          ..write('locationConfidence: $locationConfidence, ')
+          ..write('capturedAt: $capturedAt, ')
+          ..write('syncStatus: $syncStatus')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    clientUuid,
+    reportedBy,
+    role,
+    lat,
+    lng,
+    accuracy,
+    locationConfidence,
+    capturedAt,
+    syncStatus,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocationPing &&
+          other.id == this.id &&
+          other.clientUuid == this.clientUuid &&
+          other.reportedBy == this.reportedBy &&
+          other.role == this.role &&
+          other.lat == this.lat &&
+          other.lng == this.lng &&
+          other.accuracy == this.accuracy &&
+          other.locationConfidence == this.locationConfidence &&
+          other.capturedAt == this.capturedAt &&
+          other.syncStatus == this.syncStatus);
+}
+
+class LocationPingsCompanion extends UpdateCompanion<LocationPing> {
+  final Value<int> id;
+  final Value<String> clientUuid;
+  final Value<String> reportedBy;
+  final Value<String> role;
+  final Value<double> lat;
+  final Value<double> lng;
+  final Value<double?> accuracy;
+  final Value<String> locationConfidence;
+  final Value<DateTime> capturedAt;
+  final Value<int> syncStatus;
+  const LocationPingsCompanion({
+    this.id = const Value.absent(),
+    this.clientUuid = const Value.absent(),
+    this.reportedBy = const Value.absent(),
+    this.role = const Value.absent(),
+    this.lat = const Value.absent(),
+    this.lng = const Value.absent(),
+    this.accuracy = const Value.absent(),
+    this.locationConfidence = const Value.absent(),
+    this.capturedAt = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+  });
+  LocationPingsCompanion.insert({
+    this.id = const Value.absent(),
+    required String clientUuid,
+    required String reportedBy,
+    required String role,
+    required double lat,
+    required double lng,
+    this.accuracy = const Value.absent(),
+    required String locationConfidence,
+    required DateTime capturedAt,
+    this.syncStatus = const Value.absent(),
+  }) : clientUuid = Value(clientUuid),
+       reportedBy = Value(reportedBy),
+       role = Value(role),
+       lat = Value(lat),
+       lng = Value(lng),
+       locationConfidence = Value(locationConfidence),
+       capturedAt = Value(capturedAt);
+  static Insertable<LocationPing> custom({
+    Expression<int>? id,
+    Expression<String>? clientUuid,
+    Expression<String>? reportedBy,
+    Expression<String>? role,
+    Expression<double>? lat,
+    Expression<double>? lng,
+    Expression<double>? accuracy,
+    Expression<String>? locationConfidence,
+    Expression<DateTime>? capturedAt,
+    Expression<int>? syncStatus,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (clientUuid != null) 'client_uuid': clientUuid,
+      if (reportedBy != null) 'reported_by': reportedBy,
+      if (role != null) 'role': role,
+      if (lat != null) 'lat': lat,
+      if (lng != null) 'lng': lng,
+      if (accuracy != null) 'accuracy': accuracy,
+      if (locationConfidence != null) 'location_confidence': locationConfidence,
+      if (capturedAt != null) 'captured_at': capturedAt,
+      if (syncStatus != null) 'sync_status': syncStatus,
+    });
+  }
+
+  LocationPingsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? clientUuid,
+    Value<String>? reportedBy,
+    Value<String>? role,
+    Value<double>? lat,
+    Value<double>? lng,
+    Value<double?>? accuracy,
+    Value<String>? locationConfidence,
+    Value<DateTime>? capturedAt,
+    Value<int>? syncStatus,
+  }) {
+    return LocationPingsCompanion(
+      id: id ?? this.id,
+      clientUuid: clientUuid ?? this.clientUuid,
+      reportedBy: reportedBy ?? this.reportedBy,
+      role: role ?? this.role,
+      lat: lat ?? this.lat,
+      lng: lng ?? this.lng,
+      accuracy: accuracy ?? this.accuracy,
+      locationConfidence: locationConfidence ?? this.locationConfidence,
+      capturedAt: capturedAt ?? this.capturedAt,
+      syncStatus: syncStatus ?? this.syncStatus,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (clientUuid.present) {
+      map['client_uuid'] = Variable<String>(clientUuid.value);
+    }
+    if (reportedBy.present) {
+      map['reported_by'] = Variable<String>(reportedBy.value);
+    }
+    if (role.present) {
+      map['role'] = Variable<String>(role.value);
+    }
+    if (lat.present) {
+      map['lat'] = Variable<double>(lat.value);
+    }
+    if (lng.present) {
+      map['lng'] = Variable<double>(lng.value);
+    }
+    if (accuracy.present) {
+      map['accuracy'] = Variable<double>(accuracy.value);
+    }
+    if (locationConfidence.present) {
+      map['location_confidence'] = Variable<String>(locationConfidence.value);
+    }
+    if (capturedAt.present) {
+      map['captured_at'] = Variable<DateTime>(capturedAt.value);
+    }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<int>(syncStatus.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocationPingsCompanion(')
+          ..write('id: $id, ')
+          ..write('clientUuid: $clientUuid, ')
+          ..write('reportedBy: $reportedBy, ')
+          ..write('role: $role, ')
+          ..write('lat: $lat, ')
+          ..write('lng: $lng, ')
+          ..write('accuracy: $accuracy, ')
+          ..write('locationConfidence: $locationConfidence, ')
+          ..write('capturedAt: $capturedAt, ')
+          ..write('syncStatus: $syncStatus')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SosEventsTable extends SosEvents
+    with TableInfo<$SosEventsTable, SosEvent> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SosEventsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _clientUuidMeta = const VerificationMeta(
+    'clientUuid',
+  );
+  @override
+  late final GeneratedColumn<String> clientUuid = GeneratedColumn<String>(
+    'client_uuid',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _triggeredByMeta = const VerificationMeta(
+    'triggeredBy',
+  );
+  @override
+  late final GeneratedColumn<String> triggeredBy = GeneratedColumn<String>(
+    'triggered_by',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _roleMeta = const VerificationMeta('role');
+  @override
+  late final GeneratedColumn<String> role = GeneratedColumn<String>(
+    'role',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _latMeta = const VerificationMeta('lat');
+  @override
+  late final GeneratedColumn<double> lat = GeneratedColumn<double>(
+    'lat',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lngMeta = const VerificationMeta('lng');
+  @override
+  late final GeneratedColumn<double> lng = GeneratedColumn<double>(
+    'lng',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _locationConfidenceMeta =
+      const VerificationMeta('locationConfidence');
+  @override
+  late final GeneratedColumn<String> locationConfidence =
+      GeneratedColumn<String>(
+        'location_confidence',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _sentViaChannelMeta = const VerificationMeta(
+    'sentViaChannel',
+  );
+  @override
+  late final GeneratedColumn<String> sentViaChannel = GeneratedColumn<String>(
+    'sent_via_channel',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('cellular'),
+  );
+  static const VerificationMeta _meshRelayedByMeta = const VerificationMeta(
+    'meshRelayedBy',
+  );
+  @override
+  late final GeneratedColumn<String> meshRelayedBy = GeneratedColumn<String>(
+    'mesh_relayed_by',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _triggeredAtMeta = const VerificationMeta(
+    'triggeredAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> triggeredAt = GeneratedColumn<DateTime>(
+    'triggered_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _syncStatusMeta = const VerificationMeta(
+    'syncStatus',
+  );
+  @override
+  late final GeneratedColumn<int> syncStatus = GeneratedColumn<int>(
+    'sync_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    clientUuid,
+    triggeredBy,
+    role,
+    lat,
+    lng,
+    locationConfidence,
+    sentViaChannel,
+    meshRelayedBy,
+    triggeredAt,
+    syncStatus,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sos_events';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SosEvent> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('client_uuid')) {
+      context.handle(
+        _clientUuidMeta,
+        clientUuid.isAcceptableOrUnknown(data['client_uuid']!, _clientUuidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_clientUuidMeta);
+    }
+    if (data.containsKey('triggered_by')) {
+      context.handle(
+        _triggeredByMeta,
+        triggeredBy.isAcceptableOrUnknown(
+          data['triggered_by']!,
+          _triggeredByMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_triggeredByMeta);
+    }
+    if (data.containsKey('role')) {
+      context.handle(
+        _roleMeta,
+        role.isAcceptableOrUnknown(data['role']!, _roleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_roleMeta);
+    }
+    if (data.containsKey('lat')) {
+      context.handle(
+        _latMeta,
+        lat.isAcceptableOrUnknown(data['lat']!, _latMeta),
+      );
+    }
+    if (data.containsKey('lng')) {
+      context.handle(
+        _lngMeta,
+        lng.isAcceptableOrUnknown(data['lng']!, _lngMeta),
+      );
+    }
+    if (data.containsKey('location_confidence')) {
+      context.handle(
+        _locationConfidenceMeta,
+        locationConfidence.isAcceptableOrUnknown(
+          data['location_confidence']!,
+          _locationConfidenceMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_locationConfidenceMeta);
+    }
+    if (data.containsKey('sent_via_channel')) {
+      context.handle(
+        _sentViaChannelMeta,
+        sentViaChannel.isAcceptableOrUnknown(
+          data['sent_via_channel']!,
+          _sentViaChannelMeta,
+        ),
+      );
+    }
+    if (data.containsKey('mesh_relayed_by')) {
+      context.handle(
+        _meshRelayedByMeta,
+        meshRelayedBy.isAcceptableOrUnknown(
+          data['mesh_relayed_by']!,
+          _meshRelayedByMeta,
+        ),
+      );
+    }
+    if (data.containsKey('triggered_at')) {
+      context.handle(
+        _triggeredAtMeta,
+        triggeredAt.isAcceptableOrUnknown(
+          data['triggered_at']!,
+          _triggeredAtMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_triggeredAtMeta);
+    }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+        _syncStatusMeta,
+        syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SosEvent map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SosEvent(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      clientUuid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}client_uuid'],
+      )!,
+      triggeredBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}triggered_by'],
+      )!,
+      role: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}role'],
+      )!,
+      lat: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}lat'],
+      ),
+      lng: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}lng'],
+      ),
+      locationConfidence: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}location_confidence'],
+      )!,
+      sentViaChannel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sent_via_channel'],
+      )!,
+      meshRelayedBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mesh_relayed_by'],
+      ),
+      triggeredAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}triggered_at'],
+      )!,
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sync_status'],
+      )!,
+    );
+  }
+
+  @override
+  $SosEventsTable createAlias(String alias) {
+    return $SosEventsTable(attachedDatabase, alias);
+  }
+}
+
+class SosEvent extends DataClass implements Insertable<SosEvent> {
+  final int id;
+  final String clientUuid;
+  final String triggeredBy;
+  final String role;
+  final double? lat;
+  final double? lng;
+  final String locationConfidence;
+  final String sentViaChannel;
+  final String? meshRelayedBy;
+  final DateTime triggeredAt;
+  final int syncStatus;
+  const SosEvent({
+    required this.id,
+    required this.clientUuid,
+    required this.triggeredBy,
+    required this.role,
+    this.lat,
+    this.lng,
+    required this.locationConfidence,
+    required this.sentViaChannel,
+    this.meshRelayedBy,
+    required this.triggeredAt,
+    required this.syncStatus,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['client_uuid'] = Variable<String>(clientUuid);
+    map['triggered_by'] = Variable<String>(triggeredBy);
+    map['role'] = Variable<String>(role);
+    if (!nullToAbsent || lat != null) {
+      map['lat'] = Variable<double>(lat);
+    }
+    if (!nullToAbsent || lng != null) {
+      map['lng'] = Variable<double>(lng);
+    }
+    map['location_confidence'] = Variable<String>(locationConfidence);
+    map['sent_via_channel'] = Variable<String>(sentViaChannel);
+    if (!nullToAbsent || meshRelayedBy != null) {
+      map['mesh_relayed_by'] = Variable<String>(meshRelayedBy);
+    }
+    map['triggered_at'] = Variable<DateTime>(triggeredAt);
+    map['sync_status'] = Variable<int>(syncStatus);
+    return map;
+  }
+
+  SosEventsCompanion toCompanion(bool nullToAbsent) {
+    return SosEventsCompanion(
+      id: Value(id),
+      clientUuid: Value(clientUuid),
+      triggeredBy: Value(triggeredBy),
+      role: Value(role),
+      lat: lat == null && nullToAbsent ? const Value.absent() : Value(lat),
+      lng: lng == null && nullToAbsent ? const Value.absent() : Value(lng),
+      locationConfidence: Value(locationConfidence),
+      sentViaChannel: Value(sentViaChannel),
+      meshRelayedBy: meshRelayedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(meshRelayedBy),
+      triggeredAt: Value(triggeredAt),
+      syncStatus: Value(syncStatus),
+    );
+  }
+
+  factory SosEvent.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SosEvent(
+      id: serializer.fromJson<int>(json['id']),
+      clientUuid: serializer.fromJson<String>(json['clientUuid']),
+      triggeredBy: serializer.fromJson<String>(json['triggeredBy']),
+      role: serializer.fromJson<String>(json['role']),
+      lat: serializer.fromJson<double?>(json['lat']),
+      lng: serializer.fromJson<double?>(json['lng']),
+      locationConfidence: serializer.fromJson<String>(
+        json['locationConfidence'],
+      ),
+      sentViaChannel: serializer.fromJson<String>(json['sentViaChannel']),
+      meshRelayedBy: serializer.fromJson<String?>(json['meshRelayedBy']),
+      triggeredAt: serializer.fromJson<DateTime>(json['triggeredAt']),
+      syncStatus: serializer.fromJson<int>(json['syncStatus']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'clientUuid': serializer.toJson<String>(clientUuid),
+      'triggeredBy': serializer.toJson<String>(triggeredBy),
+      'role': serializer.toJson<String>(role),
+      'lat': serializer.toJson<double?>(lat),
+      'lng': serializer.toJson<double?>(lng),
+      'locationConfidence': serializer.toJson<String>(locationConfidence),
+      'sentViaChannel': serializer.toJson<String>(sentViaChannel),
+      'meshRelayedBy': serializer.toJson<String?>(meshRelayedBy),
+      'triggeredAt': serializer.toJson<DateTime>(triggeredAt),
+      'syncStatus': serializer.toJson<int>(syncStatus),
+    };
+  }
+
+  SosEvent copyWith({
+    int? id,
+    String? clientUuid,
+    String? triggeredBy,
+    String? role,
+    Value<double?> lat = const Value.absent(),
+    Value<double?> lng = const Value.absent(),
+    String? locationConfidence,
+    String? sentViaChannel,
+    Value<String?> meshRelayedBy = const Value.absent(),
+    DateTime? triggeredAt,
+    int? syncStatus,
+  }) => SosEvent(
+    id: id ?? this.id,
+    clientUuid: clientUuid ?? this.clientUuid,
+    triggeredBy: triggeredBy ?? this.triggeredBy,
+    role: role ?? this.role,
+    lat: lat.present ? lat.value : this.lat,
+    lng: lng.present ? lng.value : this.lng,
+    locationConfidence: locationConfidence ?? this.locationConfidence,
+    sentViaChannel: sentViaChannel ?? this.sentViaChannel,
+    meshRelayedBy: meshRelayedBy.present
+        ? meshRelayedBy.value
+        : this.meshRelayedBy,
+    triggeredAt: triggeredAt ?? this.triggeredAt,
+    syncStatus: syncStatus ?? this.syncStatus,
+  );
+  SosEvent copyWithCompanion(SosEventsCompanion data) {
+    return SosEvent(
+      id: data.id.present ? data.id.value : this.id,
+      clientUuid: data.clientUuid.present
+          ? data.clientUuid.value
+          : this.clientUuid,
+      triggeredBy: data.triggeredBy.present
+          ? data.triggeredBy.value
+          : this.triggeredBy,
+      role: data.role.present ? data.role.value : this.role,
+      lat: data.lat.present ? data.lat.value : this.lat,
+      lng: data.lng.present ? data.lng.value : this.lng,
+      locationConfidence: data.locationConfidence.present
+          ? data.locationConfidence.value
+          : this.locationConfidence,
+      sentViaChannel: data.sentViaChannel.present
+          ? data.sentViaChannel.value
+          : this.sentViaChannel,
+      meshRelayedBy: data.meshRelayedBy.present
+          ? data.meshRelayedBy.value
+          : this.meshRelayedBy,
+      triggeredAt: data.triggeredAt.present
+          ? data.triggeredAt.value
+          : this.triggeredAt,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SosEvent(')
+          ..write('id: $id, ')
+          ..write('clientUuid: $clientUuid, ')
+          ..write('triggeredBy: $triggeredBy, ')
+          ..write('role: $role, ')
+          ..write('lat: $lat, ')
+          ..write('lng: $lng, ')
+          ..write('locationConfidence: $locationConfidence, ')
+          ..write('sentViaChannel: $sentViaChannel, ')
+          ..write('meshRelayedBy: $meshRelayedBy, ')
+          ..write('triggeredAt: $triggeredAt, ')
+          ..write('syncStatus: $syncStatus')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    clientUuid,
+    triggeredBy,
+    role,
+    lat,
+    lng,
+    locationConfidence,
+    sentViaChannel,
+    meshRelayedBy,
+    triggeredAt,
+    syncStatus,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SosEvent &&
+          other.id == this.id &&
+          other.clientUuid == this.clientUuid &&
+          other.triggeredBy == this.triggeredBy &&
+          other.role == this.role &&
+          other.lat == this.lat &&
+          other.lng == this.lng &&
+          other.locationConfidence == this.locationConfidence &&
+          other.sentViaChannel == this.sentViaChannel &&
+          other.meshRelayedBy == this.meshRelayedBy &&
+          other.triggeredAt == this.triggeredAt &&
+          other.syncStatus == this.syncStatus);
+}
+
+class SosEventsCompanion extends UpdateCompanion<SosEvent> {
+  final Value<int> id;
+  final Value<String> clientUuid;
+  final Value<String> triggeredBy;
+  final Value<String> role;
+  final Value<double?> lat;
+  final Value<double?> lng;
+  final Value<String> locationConfidence;
+  final Value<String> sentViaChannel;
+  final Value<String?> meshRelayedBy;
+  final Value<DateTime> triggeredAt;
+  final Value<int> syncStatus;
+  const SosEventsCompanion({
+    this.id = const Value.absent(),
+    this.clientUuid = const Value.absent(),
+    this.triggeredBy = const Value.absent(),
+    this.role = const Value.absent(),
+    this.lat = const Value.absent(),
+    this.lng = const Value.absent(),
+    this.locationConfidence = const Value.absent(),
+    this.sentViaChannel = const Value.absent(),
+    this.meshRelayedBy = const Value.absent(),
+    this.triggeredAt = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+  });
+  SosEventsCompanion.insert({
+    this.id = const Value.absent(),
+    required String clientUuid,
+    required String triggeredBy,
+    required String role,
+    this.lat = const Value.absent(),
+    this.lng = const Value.absent(),
+    required String locationConfidence,
+    this.sentViaChannel = const Value.absent(),
+    this.meshRelayedBy = const Value.absent(),
+    required DateTime triggeredAt,
+    this.syncStatus = const Value.absent(),
+  }) : clientUuid = Value(clientUuid),
+       triggeredBy = Value(triggeredBy),
+       role = Value(role),
+       locationConfidence = Value(locationConfidence),
+       triggeredAt = Value(triggeredAt);
+  static Insertable<SosEvent> custom({
+    Expression<int>? id,
+    Expression<String>? clientUuid,
+    Expression<String>? triggeredBy,
+    Expression<String>? role,
+    Expression<double>? lat,
+    Expression<double>? lng,
+    Expression<String>? locationConfidence,
+    Expression<String>? sentViaChannel,
+    Expression<String>? meshRelayedBy,
+    Expression<DateTime>? triggeredAt,
+    Expression<int>? syncStatus,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (clientUuid != null) 'client_uuid': clientUuid,
+      if (triggeredBy != null) 'triggered_by': triggeredBy,
+      if (role != null) 'role': role,
+      if (lat != null) 'lat': lat,
+      if (lng != null) 'lng': lng,
+      if (locationConfidence != null) 'location_confidence': locationConfidence,
+      if (sentViaChannel != null) 'sent_via_channel': sentViaChannel,
+      if (meshRelayedBy != null) 'mesh_relayed_by': meshRelayedBy,
+      if (triggeredAt != null) 'triggered_at': triggeredAt,
+      if (syncStatus != null) 'sync_status': syncStatus,
+    });
+  }
+
+  SosEventsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? clientUuid,
+    Value<String>? triggeredBy,
+    Value<String>? role,
+    Value<double?>? lat,
+    Value<double?>? lng,
+    Value<String>? locationConfidence,
+    Value<String>? sentViaChannel,
+    Value<String?>? meshRelayedBy,
+    Value<DateTime>? triggeredAt,
+    Value<int>? syncStatus,
+  }) {
+    return SosEventsCompanion(
+      id: id ?? this.id,
+      clientUuid: clientUuid ?? this.clientUuid,
+      triggeredBy: triggeredBy ?? this.triggeredBy,
+      role: role ?? this.role,
+      lat: lat ?? this.lat,
+      lng: lng ?? this.lng,
+      locationConfidence: locationConfidence ?? this.locationConfidence,
+      sentViaChannel: sentViaChannel ?? this.sentViaChannel,
+      meshRelayedBy: meshRelayedBy ?? this.meshRelayedBy,
+      triggeredAt: triggeredAt ?? this.triggeredAt,
+      syncStatus: syncStatus ?? this.syncStatus,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (clientUuid.present) {
+      map['client_uuid'] = Variable<String>(clientUuid.value);
+    }
+    if (triggeredBy.present) {
+      map['triggered_by'] = Variable<String>(triggeredBy.value);
+    }
+    if (role.present) {
+      map['role'] = Variable<String>(role.value);
+    }
+    if (lat.present) {
+      map['lat'] = Variable<double>(lat.value);
+    }
+    if (lng.present) {
+      map['lng'] = Variable<double>(lng.value);
+    }
+    if (locationConfidence.present) {
+      map['location_confidence'] = Variable<String>(locationConfidence.value);
+    }
+    if (sentViaChannel.present) {
+      map['sent_via_channel'] = Variable<String>(sentViaChannel.value);
+    }
+    if (meshRelayedBy.present) {
+      map['mesh_relayed_by'] = Variable<String>(meshRelayedBy.value);
+    }
+    if (triggeredAt.present) {
+      map['triggered_at'] = Variable<DateTime>(triggeredAt.value);
+    }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<int>(syncStatus.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SosEventsCompanion(')
+          ..write('id: $id, ')
+          ..write('clientUuid: $clientUuid, ')
+          ..write('triggeredBy: $triggeredBy, ')
+          ..write('role: $role, ')
+          ..write('lat: $lat, ')
+          ..write('lng: $lng, ')
+          ..write('locationConfidence: $locationConfidence, ')
+          ..write('sentViaChannel: $sentViaChannel, ')
+          ..write('meshRelayedBy: $meshRelayedBy, ')
+          ..write('triggeredAt: $triggeredAt, ')
+          ..write('syncStatus: $syncStatus')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $ObservationsTable observations = $ObservationsTable(this);
   late final $EvidencesTable evidences = $EvidencesTable(this);
   late final $GrievancesTable grievances = $GrievancesTable(this);
+  late final $LocationPingsTable locationPings = $LocationPingsTable(this);
+  late final $SosEventsTable sosEvents = $SosEventsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1587,6 +2865,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     observations,
     evidences,
     grievances,
+    locationPings,
+    sosEvents,
   ];
 }
 
@@ -2373,6 +3653,621 @@ typedef $$GrievancesTableProcessedTableManager =
       Grievance,
       PrefetchHooks Function()
     >;
+typedef $$LocationPingsTableCreateCompanionBuilder =
+    LocationPingsCompanion Function({
+      Value<int> id,
+      required String clientUuid,
+      required String reportedBy,
+      required String role,
+      required double lat,
+      required double lng,
+      Value<double?> accuracy,
+      required String locationConfidence,
+      required DateTime capturedAt,
+      Value<int> syncStatus,
+    });
+typedef $$LocationPingsTableUpdateCompanionBuilder =
+    LocationPingsCompanion Function({
+      Value<int> id,
+      Value<String> clientUuid,
+      Value<String> reportedBy,
+      Value<String> role,
+      Value<double> lat,
+      Value<double> lng,
+      Value<double?> accuracy,
+      Value<String> locationConfidence,
+      Value<DateTime> capturedAt,
+      Value<int> syncStatus,
+    });
+
+class $$LocationPingsTableFilterComposer
+    extends Composer<_$AppDatabase, $LocationPingsTable> {
+  $$LocationPingsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clientUuid => $composableBuilder(
+    column: $table.clientUuid,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reportedBy => $composableBuilder(
+    column: $table.reportedBy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get role => $composableBuilder(
+    column: $table.role,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get lat => $composableBuilder(
+    column: $table.lat,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get lng => $composableBuilder(
+    column: $table.lng,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get accuracy => $composableBuilder(
+    column: $table.accuracy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get locationConfidence => $composableBuilder(
+    column: $table.locationConfidence,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get capturedAt => $composableBuilder(
+    column: $table.capturedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LocationPingsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocationPingsTable> {
+  $$LocationPingsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clientUuid => $composableBuilder(
+    column: $table.clientUuid,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reportedBy => $composableBuilder(
+    column: $table.reportedBy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get role => $composableBuilder(
+    column: $table.role,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get lat => $composableBuilder(
+    column: $table.lat,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get lng => $composableBuilder(
+    column: $table.lng,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get accuracy => $composableBuilder(
+    column: $table.accuracy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get locationConfidence => $composableBuilder(
+    column: $table.locationConfidence,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get capturedAt => $composableBuilder(
+    column: $table.capturedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LocationPingsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocationPingsTable> {
+  $$LocationPingsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get clientUuid => $composableBuilder(
+    column: $table.clientUuid,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get reportedBy => $composableBuilder(
+    column: $table.reportedBy,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get role =>
+      $composableBuilder(column: $table.role, builder: (column) => column);
+
+  GeneratedColumn<double> get lat =>
+      $composableBuilder(column: $table.lat, builder: (column) => column);
+
+  GeneratedColumn<double> get lng =>
+      $composableBuilder(column: $table.lng, builder: (column) => column);
+
+  GeneratedColumn<double> get accuracy =>
+      $composableBuilder(column: $table.accuracy, builder: (column) => column);
+
+  GeneratedColumn<String> get locationConfidence => $composableBuilder(
+    column: $table.locationConfidence,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get capturedAt => $composableBuilder(
+    column: $table.capturedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => column,
+  );
+}
+
+class $$LocationPingsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LocationPingsTable,
+          LocationPing,
+          $$LocationPingsTableFilterComposer,
+          $$LocationPingsTableOrderingComposer,
+          $$LocationPingsTableAnnotationComposer,
+          $$LocationPingsTableCreateCompanionBuilder,
+          $$LocationPingsTableUpdateCompanionBuilder,
+          (
+            LocationPing,
+            BaseReferences<_$AppDatabase, $LocationPingsTable, LocationPing>,
+          ),
+          LocationPing,
+          PrefetchHooks Function()
+        > {
+  $$LocationPingsTableTableManager(_$AppDatabase db, $LocationPingsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LocationPingsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LocationPingsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LocationPingsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> clientUuid = const Value.absent(),
+                Value<String> reportedBy = const Value.absent(),
+                Value<String> role = const Value.absent(),
+                Value<double> lat = const Value.absent(),
+                Value<double> lng = const Value.absent(),
+                Value<double?> accuracy = const Value.absent(),
+                Value<String> locationConfidence = const Value.absent(),
+                Value<DateTime> capturedAt = const Value.absent(),
+                Value<int> syncStatus = const Value.absent(),
+              }) => LocationPingsCompanion(
+                id: id,
+                clientUuid: clientUuid,
+                reportedBy: reportedBy,
+                role: role,
+                lat: lat,
+                lng: lng,
+                accuracy: accuracy,
+                locationConfidence: locationConfidence,
+                capturedAt: capturedAt,
+                syncStatus: syncStatus,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String clientUuid,
+                required String reportedBy,
+                required String role,
+                required double lat,
+                required double lng,
+                Value<double?> accuracy = const Value.absent(),
+                required String locationConfidence,
+                required DateTime capturedAt,
+                Value<int> syncStatus = const Value.absent(),
+              }) => LocationPingsCompanion.insert(
+                id: id,
+                clientUuid: clientUuid,
+                reportedBy: reportedBy,
+                role: role,
+                lat: lat,
+                lng: lng,
+                accuracy: accuracy,
+                locationConfidence: locationConfidence,
+                capturedAt: capturedAt,
+                syncStatus: syncStatus,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LocationPingsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LocationPingsTable,
+      LocationPing,
+      $$LocationPingsTableFilterComposer,
+      $$LocationPingsTableOrderingComposer,
+      $$LocationPingsTableAnnotationComposer,
+      $$LocationPingsTableCreateCompanionBuilder,
+      $$LocationPingsTableUpdateCompanionBuilder,
+      (
+        LocationPing,
+        BaseReferences<_$AppDatabase, $LocationPingsTable, LocationPing>,
+      ),
+      LocationPing,
+      PrefetchHooks Function()
+    >;
+typedef $$SosEventsTableCreateCompanionBuilder =
+    SosEventsCompanion Function({
+      Value<int> id,
+      required String clientUuid,
+      required String triggeredBy,
+      required String role,
+      Value<double?> lat,
+      Value<double?> lng,
+      required String locationConfidence,
+      Value<String> sentViaChannel,
+      Value<String?> meshRelayedBy,
+      required DateTime triggeredAt,
+      Value<int> syncStatus,
+    });
+typedef $$SosEventsTableUpdateCompanionBuilder =
+    SosEventsCompanion Function({
+      Value<int> id,
+      Value<String> clientUuid,
+      Value<String> triggeredBy,
+      Value<String> role,
+      Value<double?> lat,
+      Value<double?> lng,
+      Value<String> locationConfidence,
+      Value<String> sentViaChannel,
+      Value<String?> meshRelayedBy,
+      Value<DateTime> triggeredAt,
+      Value<int> syncStatus,
+    });
+
+class $$SosEventsTableFilterComposer
+    extends Composer<_$AppDatabase, $SosEventsTable> {
+  $$SosEventsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clientUuid => $composableBuilder(
+    column: $table.clientUuid,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get triggeredBy => $composableBuilder(
+    column: $table.triggeredBy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get role => $composableBuilder(
+    column: $table.role,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get lat => $composableBuilder(
+    column: $table.lat,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get lng => $composableBuilder(
+    column: $table.lng,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get locationConfidence => $composableBuilder(
+    column: $table.locationConfidence,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sentViaChannel => $composableBuilder(
+    column: $table.sentViaChannel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get meshRelayedBy => $composableBuilder(
+    column: $table.meshRelayedBy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get triggeredAt => $composableBuilder(
+    column: $table.triggeredAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SosEventsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SosEventsTable> {
+  $$SosEventsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clientUuid => $composableBuilder(
+    column: $table.clientUuid,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get triggeredBy => $composableBuilder(
+    column: $table.triggeredBy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get role => $composableBuilder(
+    column: $table.role,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get lat => $composableBuilder(
+    column: $table.lat,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get lng => $composableBuilder(
+    column: $table.lng,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get locationConfidence => $composableBuilder(
+    column: $table.locationConfidence,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sentViaChannel => $composableBuilder(
+    column: $table.sentViaChannel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get meshRelayedBy => $composableBuilder(
+    column: $table.meshRelayedBy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get triggeredAt => $composableBuilder(
+    column: $table.triggeredAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SosEventsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SosEventsTable> {
+  $$SosEventsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get clientUuid => $composableBuilder(
+    column: $table.clientUuid,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get triggeredBy => $composableBuilder(
+    column: $table.triggeredBy,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get role =>
+      $composableBuilder(column: $table.role, builder: (column) => column);
+
+  GeneratedColumn<double> get lat =>
+      $composableBuilder(column: $table.lat, builder: (column) => column);
+
+  GeneratedColumn<double> get lng =>
+      $composableBuilder(column: $table.lng, builder: (column) => column);
+
+  GeneratedColumn<String> get locationConfidence => $composableBuilder(
+    column: $table.locationConfidence,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sentViaChannel => $composableBuilder(
+    column: $table.sentViaChannel,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get meshRelayedBy => $composableBuilder(
+    column: $table.meshRelayedBy,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get triggeredAt => $composableBuilder(
+    column: $table.triggeredAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => column,
+  );
+}
+
+class $$SosEventsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SosEventsTable,
+          SosEvent,
+          $$SosEventsTableFilterComposer,
+          $$SosEventsTableOrderingComposer,
+          $$SosEventsTableAnnotationComposer,
+          $$SosEventsTableCreateCompanionBuilder,
+          $$SosEventsTableUpdateCompanionBuilder,
+          (SosEvent, BaseReferences<_$AppDatabase, $SosEventsTable, SosEvent>),
+          SosEvent,
+          PrefetchHooks Function()
+        > {
+  $$SosEventsTableTableManager(_$AppDatabase db, $SosEventsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SosEventsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SosEventsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SosEventsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> clientUuid = const Value.absent(),
+                Value<String> triggeredBy = const Value.absent(),
+                Value<String> role = const Value.absent(),
+                Value<double?> lat = const Value.absent(),
+                Value<double?> lng = const Value.absent(),
+                Value<String> locationConfidence = const Value.absent(),
+                Value<String> sentViaChannel = const Value.absent(),
+                Value<String?> meshRelayedBy = const Value.absent(),
+                Value<DateTime> triggeredAt = const Value.absent(),
+                Value<int> syncStatus = const Value.absent(),
+              }) => SosEventsCompanion(
+                id: id,
+                clientUuid: clientUuid,
+                triggeredBy: triggeredBy,
+                role: role,
+                lat: lat,
+                lng: lng,
+                locationConfidence: locationConfidence,
+                sentViaChannel: sentViaChannel,
+                meshRelayedBy: meshRelayedBy,
+                triggeredAt: triggeredAt,
+                syncStatus: syncStatus,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String clientUuid,
+                required String triggeredBy,
+                required String role,
+                Value<double?> lat = const Value.absent(),
+                Value<double?> lng = const Value.absent(),
+                required String locationConfidence,
+                Value<String> sentViaChannel = const Value.absent(),
+                Value<String?> meshRelayedBy = const Value.absent(),
+                required DateTime triggeredAt,
+                Value<int> syncStatus = const Value.absent(),
+              }) => SosEventsCompanion.insert(
+                id: id,
+                clientUuid: clientUuid,
+                triggeredBy: triggeredBy,
+                role: role,
+                lat: lat,
+                lng: lng,
+                locationConfidence: locationConfidence,
+                sentViaChannel: sentViaChannel,
+                meshRelayedBy: meshRelayedBy,
+                triggeredAt: triggeredAt,
+                syncStatus: syncStatus,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SosEventsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SosEventsTable,
+      SosEvent,
+      $$SosEventsTableFilterComposer,
+      $$SosEventsTableOrderingComposer,
+      $$SosEventsTableAnnotationComposer,
+      $$SosEventsTableCreateCompanionBuilder,
+      $$SosEventsTableUpdateCompanionBuilder,
+      (SosEvent, BaseReferences<_$AppDatabase, $SosEventsTable, SosEvent>),
+      SosEvent,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2383,4 +4278,8 @@ class $AppDatabaseManager {
       $$EvidencesTableTableManager(_db, _db.evidences);
   $$GrievancesTableTableManager get grievances =>
       $$GrievancesTableTableManager(_db, _db.grievances);
+  $$LocationPingsTableTableManager get locationPings =>
+      $$LocationPingsTableTableManager(_db, _db.locationPings);
+  $$SosEventsTableTableManager get sosEvents =>
+      $$SosEventsTableTableManager(_db, _db.sosEvents);
 }

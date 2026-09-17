@@ -69,7 +69,7 @@ class LocationService {
       // Attempt live GPS fix — 4 second timeout (3G-friendly)
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.balanced,
+          accuracy: LocationAccuracy.medium,
           timeLimit: Duration(seconds: 4),
         ),
       );
@@ -120,7 +120,7 @@ class LocationService {
     try {
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.balanced,
+          accuracy: LocationAccuracy.medium,
           timeLimit: Duration(seconds: 3),
         ),
       );

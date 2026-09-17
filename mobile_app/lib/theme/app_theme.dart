@@ -28,6 +28,14 @@ class AppTheme {
   static const Color line = Color(0xFFD3D9D5);
   static const Color lineSoft = Color(0xFFE6EAE7);
 
+  // Aliases for screen widgets
+  static const Color nearBlackCoal = graphite;
+  static const Color offWhiteBackground = paper;
+  static const Color cobaltBlue = steel;
+  static const Color absoluteBlack = ink;
+  static const Color borderGrey = line;
+
+
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
