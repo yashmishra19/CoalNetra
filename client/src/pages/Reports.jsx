@@ -185,19 +185,19 @@ export default function Reports() {
 
   return (
     <PageShell>
-      <div className="space-y-4 pb-12">
+      <div className="space-y-8 pb-12">
         {/* Page Header */}
         <div className="pt-1">
-          <h1 className="text-lg font-bold text-gray-950 tracking-tight">
+          <h1 className="text-[26px] font-bold text-brand-primary tracking-tight">
             {data.header.title}
           </h1>
-          <p className="text-xs text-gray-500 mt-0.5 leading-relaxed max-w-3xl">
+          <p className="text-[14px] text-status-neutral mt-1 leading-relaxed max-w-3xl">
             {data.header.subtitle}
           </p>
         </div>
 
         {/* 1. Two-Column Top Row: Signature Queue (Left) & Report Generator (Right) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
           {/* Left: Waiting for your signature */}
           <div className="lg:col-span-7 xl:col-span-7 flex">
             <Card className="p-4 w-full flex flex-col justify-between">

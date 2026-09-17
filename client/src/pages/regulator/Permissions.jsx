@@ -64,7 +64,7 @@ export default function Permissions() {
       {/* PAGE HEADER */}
       <div className="mt-2 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
-          <h1 className="text-[28px] font-bold text-brand-primary tracking-tight">
+          <h1 className="text-[26px] font-bold text-brand-primary tracking-tight">
             {header.title}
           </h1>
           <p className="mt-1 text-[14px] text-status-neutral leading-relaxed max-w-[600px]">
@@ -75,32 +75,34 @@ export default function Permissions() {
           <button className="border border-page-border rounded-lg px-4 py-2.5 text-[13px] font-medium text-brand-primary hover:bg-page-bg transition cursor-pointer">
             Open the permission module
           </button>
-          <button className="bg-status-info text-white rounded-lg px-5 py-2.5 text-[13px] font-semibold hover:bg-status-info-dark transition cursor-pointer">
+          <button className="bg-status-info text-white rounded-lg px-4 py-2.5 text-[13px] font-semibold hover:bg-status-info-dark transition cursor-pointer">
             Dispose selected
           </button>
         </div>
       </div>
 
       {/* KPI ROW */}
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         {kpis.map((kpi) => (
-          <div key={kpi.id} className="bg-white border border-page-border rounded-xl p-5">
-            <div className="text-[36px] font-bold text-brand-primary leading-none flex items-baseline">
-              <span>{kpi.value}</span>
-              {kpi.suffix && (
-                <span className="text-[16px] text-status-neutral font-medium inline ml-1">
-                  {kpi.suffix}
-                </span>
-              )}
-            </div>
-            <div className="mt-2 text-[13px] text-status-neutral leading-snug">
-              {kpi.dot === 'critical' && (
-                <span className="w-2 h-2 rounded-full bg-status-critical inline-block mr-1.5 relative -top-[1px]" />
-              )}
-              {kpi.dot === 'warning' && (
-                <span className="w-2 h-2 rounded-full bg-status-warning inline-block mr-1.5 relative -top-[1px]" />
-              )}
-              {kpi.label}
+          <div key={kpi.id} className="bg-white border border-page-border rounded-xl p-5 flex flex-col justify-between">
+            <div>
+              <div className="text-[12px] font-semibold uppercase tracking-wider text-status-neutral flex items-center">
+                {kpi.dot === 'critical' && (
+                  <span className="w-2 h-2 rounded-full bg-status-critical inline-block mr-1.5" />
+                )}
+                {kpi.dot === 'warning' && (
+                  <span className="w-2 h-2 rounded-full bg-status-warning inline-block mr-1.5" />
+                )}
+                {kpi.label}
+              </div>
+              <div className="mt-2 text-[30px] font-bold text-brand-primary leading-none flex items-baseline">
+                <span>{kpi.value}</span>
+                {kpi.suffix && (
+                  <span className="text-[14px] text-status-neutral font-medium inline ml-1">
+                    {kpi.suffix}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         ))}

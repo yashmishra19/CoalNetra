@@ -139,19 +139,19 @@ export default function InspectionsCapa() {
 
   return (
     <PageShell>
-      <div className="space-y-4 pb-12">
+      <div className="space-y-8 pb-12">
         {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
           <div>
-            <h1 className="text-lg font-bold text-gray-950 tracking-tight">
+            <h1 className="text-[26px] font-bold text-brand-primary tracking-tight">
               {data.header.title}
             </h1>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-[14px] text-status-neutral mt-1">
               {data.header.subtitle}
             </p>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-3 shrink-0">
             <Button variant="secondary" size="sm" className="text-xs font-medium flex items-center gap-1.5">
               <Upload className="w-3.5 h-3.5" />
               Import inspection report (PDF)

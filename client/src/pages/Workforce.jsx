@@ -195,24 +195,24 @@ export default function Workforce() {
 
   return (
     <PageShell>
-      <div className="space-y-4 pb-12">
+      <div className="space-y-8 pb-12">
         {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
           <div>
-            <h1 className="text-lg font-bold text-gray-950 tracking-tight">
+            <h1 className="text-[26px] font-bold text-brand-primary tracking-tight">
               {data.header.title}
             </h1>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-[14px] text-status-neutral mt-1">
               {data.header.subtitle}
             </p>
             {data.header.syncStatus && (
-              <div className="text-[11px] text-gray-400 mt-0.5">
+              <div className="text-[12px] text-status-neutral italic mt-0.5">
                 {data.header.syncStatus}
               </div>
             )}
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-3 shrink-0">
             <Button
               variant="dark-blue"
               size="sm"
