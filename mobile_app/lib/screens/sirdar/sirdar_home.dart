@@ -39,11 +39,11 @@ class _SirdarHomeState extends State<SirdarHome> {
   @override
   void initState() {
     super.initState();
-    _tabs = const [
-      SirdarHomeTab(),
-      ObservationsTab(),
-      SirdarMapTab(),
-      SirdarProfileTab(),
+    _tabs = [
+      const SirdarHomeTab(),
+      const ObservationsTab(),
+      const SirdarMapTab(),
+      SirdarProfileTab(user: widget.user),
     ];
     _startPollingPendingCount();
     _startPollingLocationStatus();

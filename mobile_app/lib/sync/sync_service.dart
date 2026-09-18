@@ -15,10 +15,18 @@ class SyncService {
   SyncService(this.database);
 
   final AppDatabase database;
-  static const apiBaseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:5000',
-  );
+  
+  static String? serverUrlOverride;
+
+  static String get effectiveApiBaseUrl {
+    if (serverUrlOverride != null && serverUrlOverride!.isNotEmpty) {
+      return serverUrlOverride!;
+    }
+    return const String.fromEnvironment(
+      'API_BASE_URL',
+      defaultValue: 'http://10.0.2.2:5000',
+    );
+  }
 
   // Prevents concurrent sync attempts
   bool _isSyncing = false;
@@ -88,7 +96,6 @@ class SyncService {
     // request size small on 3G (each chunk max 20 records)
     final obsChunks = _chunk(observations, 20);
     final grvChunks = _chunk(grievances, 20);
-    // Location pings and SOS are already limited by DB queries (5 and all pending)
 
     int totalMarked = 0;
     DateTime serverTime = DateTime.now().toUtc();
@@ -138,7 +145,6 @@ class SyncService {
     final allObsChunks = obsChunks.isEmpty ? [[]] : obsChunks;
     final allGrvChunks = grvChunks.isEmpty ? [[]] : grvChunks;
 
-    // Iterate over the larger of the two chunk lists
     final maxChunks = [allObsChunks.length, allGrvChunks.length].reduce((a, b) => a > b ? a : b);
     for (int i = 0; i < maxChunks; i++) {
       final obsSlice = i < allObsChunks.length ? allObsChunks[i] : [];
@@ -184,8 +190,9 @@ class SyncService {
   }
 
   Future<Map<String, dynamic>> _post(Map<String, dynamic> body) async {
+    final baseUrl = effectiveApiBaseUrl;
     final response = await http.post(
-      Uri.parse('$apiBaseUrl/api/sync/push'),
+      Uri.parse('$baseUrl/api/sync/push'),
       headers: {
         'content-type': 'application/json',
         'connection': 'keep-alive',

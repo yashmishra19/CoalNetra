@@ -21,6 +21,19 @@ class _WorkerHomeState extends State<WorkerHome> {
   bool _sosActive = false;
   String _sosStatusMessage = '';
 
+  late final List<Widget> _tabs;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabs = [
+      const WorkerHomeTab(),
+      const ObservationsTab(),
+      const GrievancesTab(),
+      SirdarProfileTab(user: widget.user),
+    ];
+  }
+
   Future<void> _triggerSos() async {
     final sosSvc = Provider.of<MeshSosService?>(context, listen: false);
     if (sosSvc == null) {
@@ -44,13 +57,6 @@ class _WorkerHomeState extends State<WorkerHome> {
     }
   }
 
-  final List<Widget> _tabs = const [
-    WorkerHomeTab(),
-    ObservationsTab(),
-    GrievancesTab(),
-    SirdarProfileTab(), // Reusing profile tab UI
-  ];
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -65,11 +71,13 @@ class _WorkerHomeState extends State<WorkerHome> {
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                 child: Row(
                   children: [
-                    const CircleAvatar(
+                    CircleAvatar(
                       radius: 20,
                       backgroundColor: AppTheme.amberAccent,
-                      foregroundImage: NetworkImage('https://i.pravatar.cc/150?u=worker'),
-                      child: Text('RW', style: TextStyle(color: Colors.white)),
+                      child: Text(
+                        widget.user.role.userName.substring(0, 1),
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Column(

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'database/database.dart';
@@ -63,13 +64,25 @@ void main() {
       );
       await _meshSosService.startListening(); // Listens for peer SOS over UDP
 
-      // ── 5. Background sync every 30 seconds
-      Timer.periodic(const Duration(seconds: 30), (_) {
+      // ── 5. Periodic background sync every 20 seconds
+      Timer.periodic(const Duration(seconds: 20), (_) {
         _syncService.sync().catchError((_) => SyncResult(
           pushed: 0,
           serverTime: DateTime.now().toUtc(),
         ));
       });
+
+      // ── 6. INSTANT SYNC TRIGGER: Listen to real-time network state changes (WiFi / 4G / 5G)
+      Connectivity().onConnectivityChanged.listen((results) {
+        if (!results.contains(ConnectivityResult.none)) {
+          debugPrint('NETWORK RESTORED: Triggering immediate DB sync');
+          _syncService.sync().catchError((e) {
+            debugPrint('Instant sync error: $e');
+            return SyncResult(pushed: 0, serverTime: DateTime.now().toUtc());
+          });
+        }
+      });
+
     } catch (e) {
       initError = e.toString();
       debugPrint('INIT FAILED: $e');
