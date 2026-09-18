@@ -4,7 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:uuid/uuid.dart';
 import '../database/database.dart';
 
-/// LocationService — captures GPS every 2 minutes.
+/// LocationService — captures 24/7 background GPS location tagging every 2 minutes.
 /// Works above ground (live GPS) and underground (last known position).
 /// Stores each ping in the local Drift DB for offline-first sync.
 class LocationService {
@@ -24,18 +24,18 @@ class LocationService {
         _role = role,
         _userId = userId;
 
-  /// Start pinging every 2 minutes
+  /// Start 24/7 location tagging every 2 minutes
   Future<void> start() async {
     if (_running) return;
     _running = true;
 
-    // Request permissions upfront
+    // Request permissions upfront (including 24/7 background location)
     await _requestPermissions();
 
     // Immediately take first ping on start
     await _captureAndStore();
 
-    // Then every 2 minutes
+    // Then every 2 minutes 24/7
     _timer = Timer.periodic(const Duration(minutes: 2), (_) async {
       await _captureAndStore();
     });
@@ -54,6 +54,10 @@ class LocationService {
 
       LocationPermission perm = await Geolocator.checkPermission();
       if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+      }
+      if (perm == LocationPermission.whileInUse) {
+        // Request background location permission for 24/7 background tagging
         perm = await Geolocator.requestPermission();
       }
     } catch (_) {}

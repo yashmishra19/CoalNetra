@@ -3,11 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../database/database.dart';
 import '../../models/user_role.dart';
-import '../../services/location_service.dart';
-import '../../services/mesh_sos_service.dart';
+import '../../services/app_services.dart';
 import '../../theme/app_theme.dart';
 import '../shared/observations_tab.dart';
-import '../observation_form.dart';
 import 'sirdar_home_tab.dart';
 import 'sirdar_map_tab.dart';
 import 'sirdar_profile_tab.dart';
@@ -39,11 +37,11 @@ class _SirdarHomeState extends State<SirdarHome> {
   @override
   void initState() {
     super.initState();
-    _tabs = const [
-      SirdarHomeTab(),
-      ObservationsTab(),
-      SirdarMapTab(),
-      SirdarProfileTab(),
+    _tabs = [
+      const SirdarHomeTab(),
+      const ObservationsTab(),
+      const SirdarMapTab(),
+      SirdarProfileTab(user: widget.user),
     ];
     _startPollingPendingCount();
     _startPollingLocationStatus();
@@ -72,7 +70,8 @@ class _SirdarHomeState extends State<SirdarHome> {
 
   void _startPollingLocationStatus() {
     _locationTimer = Timer.periodic(const Duration(seconds: 30), (_) async {
-      final locSvc = Provider.of<LocationService?>(context, listen: false);
+      final appServices = Provider.of<AppServices>(context, listen: false);
+      final locSvc = appServices.locationService;
       if (locSvc == null || !mounted) return;
       final snap = await locSvc.getCurrentSnapshot();
       if (mounted) {
@@ -84,14 +83,15 @@ class _SirdarHomeState extends State<SirdarHome> {
   }
 
   Future<void> _triggerSos() async {
-    final sosSvc = Provider.of<MeshSosService?>(context, listen: false);
+    final appServices = Provider.of<AppServices>(context, listen: false);
+    final sosSvc = appServices.meshSosService;
     if (sosSvc == null) {
       _showSosResult('SOS service unavailable. Call +91-112.');
       return;
     }
     setState(() {
       _sosActive = true;
-      _sosStatusMessage = 'Broadcasting SOS…';
+      _sosStatusMessage = '🚨 Broadcasting SOS over Cellular, WiFi & Bluetooth…';
     });
 
     try {
@@ -102,7 +102,6 @@ class _SirdarHomeState extends State<SirdarHome> {
               ? '✓ SOS sent via ${result.channelSummary}'
               : 'SOS stored — will send when online';
         });
-        // Keep the red SOS sheet visible for 5 seconds, then collapse
         Future.delayed(const Duration(seconds: 5), () {
           if (mounted) setState(() => _sosActive = false);
         });
@@ -133,11 +132,10 @@ class _SirdarHomeState extends State<SirdarHome> {
         bottom: false,
         child: Column(
           children: [
-            // ── Status bar
+            // ── Status bar — intrinsic height (no fixed px that clips)
             Container(
-              height: 30,
               color: AppTheme.graphite,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -207,20 +205,23 @@ class _SirdarHomeState extends State<SirdarHome> {
                         ),
                         const SizedBox(width: 5),
                         Text(
-                          _pendingCount > 0 ? '$_pendingCount waiting to send' : 'All synced',
+                          _pendingCount > 0 ? '$_pendingCount pending' : 'Synced',
                           style: const TextStyle(color: Color(0xFFCFD9DD), fontSize: 12, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    '📍 $_locationConfidence',
-                    style: const TextStyle(color: Color(0xFFCFD9DD), fontSize: 12),
+                  Flexible(
+                    child: Text(
+                      '📍 $_locationConfidence',
+                      style: const TextStyle(color: Color(0xFFCFD9DD), fontSize: 12),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    _currentMode == 'opencast' ? 'Opencast' : 'Underground',
+                    _currentMode == 'opencast' ? 'OC' : 'UG',
                     style: const TextStyle(color: Color(0xFFCFD9DD), fontSize: 12),
                   ),
                   const Spacer(),
@@ -279,9 +280,9 @@ class _SirdarHomeState extends State<SirdarHome> {
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       _buildBottomTab(0, Icons.home_filled, 'Shift'),
-                      _buildBottomTab(2, Icons.format_list_bulleted, 'Round'),
                       _buildBottomTab(1, Icons.done_all, 'Actions'),
-                      _buildBottomTab(3, Icons.assignment, 'Report'),
+                      _buildBottomTab(2, Icons.map_outlined, 'Map'),
+                      _buildBottomTab(3, Icons.person, 'Profile'),
                     ],
                   ),
                 ),

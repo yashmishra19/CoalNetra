@@ -51,76 +51,115 @@ class ObservationsTab extends StatelessWidget {
   Widget _buildCard(BuildContext context, MockObservation obs) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade200),
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 4,
-            height: 60,
-            decoration: BoxDecoration(
-              color: _statusColor(obs.status),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () {
+            showDialog(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: Row(
                   children: [
-                    Text(obs.id,
-                        style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.amberAccent)),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: _statusColor(obs.status).withAlpha(30),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: _statusColor(obs.status)),
-                      ),
-                      child: Text(
-                        obs.status,
-                        style: TextStyle(
-                            fontSize: 10,
-                            color: _statusColor(obs.status),
-                            fontWeight: FontWeight.bold),
-                      ),
-                    ),
+                    const Icon(Icons.assignment_turned_in, color: AppTheme.amberAccent),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text('${obs.id} · ${obs.category}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
                   ],
                 ),
-                const SizedBox(height: 4),
-                Text(obs.category,
-                    style: const TextStyle(
-                        fontSize: 14, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 2),
-                Row(
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.location_on_outlined,
-                        size: 12, color: Colors.grey),
-                    const SizedBox(width: 2),
-                    Text(obs.location,
-                        style: const TextStyle(
-                            fontSize: 11, color: Colors.grey)),
-                    const Spacer(),
-                    Text(obs.date,
-                        style: const TextStyle(
-                            fontSize: 10, color: Colors.grey)),
+                    Text('Location: ${obs.location}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                    const SizedBox(height: 4),
+                    Text('Logged Date: ${obs.date}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                    const SizedBox(height: 8),
+                    Text('Current Status: ${obs.status}', style: TextStyle(fontSize: 13, color: _statusColor(obs.status), fontWeight: FontWeight.bold)),
                   ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Close'),
+                  ),
+                ],
+              ),
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                Container(
+                  width: 4,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: _statusColor(obs.status),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(obs.id,
+                              style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.amberAccent)),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: _statusColor(obs.status).withAlpha(30),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: _statusColor(obs.status)),
+                            ),
+                            child: Text(
+                              obs.status,
+                              style: TextStyle(
+                                  fontSize: 10,
+                                  color: _statusColor(obs.status),
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(obs.category,
+                          style: const TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on_outlined,
+                              size: 12, color: Colors.grey),
+                          const SizedBox(width: 2),
+                          Text(obs.location,
+                              style: const TextStyle(
+                                  fontSize: 11, color: Colors.grey)),
+                          const Spacer(),
+                          Text(obs.date,
+                              style: const TextStyle(
+                                  fontSize: 10, color: Colors.grey)),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }

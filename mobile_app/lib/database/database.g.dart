@@ -2231,6 +2231,17 @@ class $SosEventsTable extends SosEvents
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _userNameMeta = const VerificationMeta(
+    'userName',
+  );
+  @override
+  late final GeneratedColumn<String> userName = GeneratedColumn<String>(
+    'user_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _latMeta = const VerificationMeta('lat');
   @override
   late final GeneratedColumn<double> lat = GeneratedColumn<double>(
@@ -2312,6 +2323,7 @@ class $SosEventsTable extends SosEvents
     clientUuid,
     triggeredBy,
     role,
+    userName,
     lat,
     lng,
     locationConfidence,
@@ -2361,6 +2373,12 @@ class $SosEventsTable extends SosEvents
       );
     } else if (isInserting) {
       context.missing(_roleMeta);
+    }
+    if (data.containsKey('user_name')) {
+      context.handle(
+        _userNameMeta,
+        userName.isAcceptableOrUnknown(data['user_name']!, _userNameMeta),
+      );
     }
     if (data.containsKey('lat')) {
       context.handle(
@@ -2445,6 +2463,10 @@ class $SosEventsTable extends SosEvents
         DriftSqlType.string,
         data['${effectivePrefix}role'],
       )!,
+      userName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_name'],
+      ),
       lat: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}lat'],
@@ -2487,6 +2509,7 @@ class SosEvent extends DataClass implements Insertable<SosEvent> {
   final String clientUuid;
   final String triggeredBy;
   final String role;
+  final String? userName;
   final double? lat;
   final double? lng;
   final String locationConfidence;
@@ -2499,6 +2522,7 @@ class SosEvent extends DataClass implements Insertable<SosEvent> {
     required this.clientUuid,
     required this.triggeredBy,
     required this.role,
+    this.userName,
     this.lat,
     this.lng,
     required this.locationConfidence,
@@ -2514,6 +2538,9 @@ class SosEvent extends DataClass implements Insertable<SosEvent> {
     map['client_uuid'] = Variable<String>(clientUuid);
     map['triggered_by'] = Variable<String>(triggeredBy);
     map['role'] = Variable<String>(role);
+    if (!nullToAbsent || userName != null) {
+      map['user_name'] = Variable<String>(userName);
+    }
     if (!nullToAbsent || lat != null) {
       map['lat'] = Variable<double>(lat);
     }
@@ -2536,6 +2563,9 @@ class SosEvent extends DataClass implements Insertable<SosEvent> {
       clientUuid: Value(clientUuid),
       triggeredBy: Value(triggeredBy),
       role: Value(role),
+      userName: userName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(userName),
       lat: lat == null && nullToAbsent ? const Value.absent() : Value(lat),
       lng: lng == null && nullToAbsent ? const Value.absent() : Value(lng),
       locationConfidence: Value(locationConfidence),
@@ -2558,6 +2588,7 @@ class SosEvent extends DataClass implements Insertable<SosEvent> {
       clientUuid: serializer.fromJson<String>(json['clientUuid']),
       triggeredBy: serializer.fromJson<String>(json['triggeredBy']),
       role: serializer.fromJson<String>(json['role']),
+      userName: serializer.fromJson<String?>(json['userName']),
       lat: serializer.fromJson<double?>(json['lat']),
       lng: serializer.fromJson<double?>(json['lng']),
       locationConfidence: serializer.fromJson<String>(
@@ -2577,6 +2608,7 @@ class SosEvent extends DataClass implements Insertable<SosEvent> {
       'clientUuid': serializer.toJson<String>(clientUuid),
       'triggeredBy': serializer.toJson<String>(triggeredBy),
       'role': serializer.toJson<String>(role),
+      'userName': serializer.toJson<String?>(userName),
       'lat': serializer.toJson<double?>(lat),
       'lng': serializer.toJson<double?>(lng),
       'locationConfidence': serializer.toJson<String>(locationConfidence),
@@ -2592,6 +2624,7 @@ class SosEvent extends DataClass implements Insertable<SosEvent> {
     String? clientUuid,
     String? triggeredBy,
     String? role,
+    Value<String?> userName = const Value.absent(),
     Value<double?> lat = const Value.absent(),
     Value<double?> lng = const Value.absent(),
     String? locationConfidence,
@@ -2604,6 +2637,7 @@ class SosEvent extends DataClass implements Insertable<SosEvent> {
     clientUuid: clientUuid ?? this.clientUuid,
     triggeredBy: triggeredBy ?? this.triggeredBy,
     role: role ?? this.role,
+    userName: userName.present ? userName.value : this.userName,
     lat: lat.present ? lat.value : this.lat,
     lng: lng.present ? lng.value : this.lng,
     locationConfidence: locationConfidence ?? this.locationConfidence,
@@ -2624,6 +2658,7 @@ class SosEvent extends DataClass implements Insertable<SosEvent> {
           ? data.triggeredBy.value
           : this.triggeredBy,
       role: data.role.present ? data.role.value : this.role,
+      userName: data.userName.present ? data.userName.value : this.userName,
       lat: data.lat.present ? data.lat.value : this.lat,
       lng: data.lng.present ? data.lng.value : this.lng,
       locationConfidence: data.locationConfidence.present
@@ -2651,6 +2686,7 @@ class SosEvent extends DataClass implements Insertable<SosEvent> {
           ..write('clientUuid: $clientUuid, ')
           ..write('triggeredBy: $triggeredBy, ')
           ..write('role: $role, ')
+          ..write('userName: $userName, ')
           ..write('lat: $lat, ')
           ..write('lng: $lng, ')
           ..write('locationConfidence: $locationConfidence, ')
@@ -2668,6 +2704,7 @@ class SosEvent extends DataClass implements Insertable<SosEvent> {
     clientUuid,
     triggeredBy,
     role,
+    userName,
     lat,
     lng,
     locationConfidence,
@@ -2684,6 +2721,7 @@ class SosEvent extends DataClass implements Insertable<SosEvent> {
           other.clientUuid == this.clientUuid &&
           other.triggeredBy == this.triggeredBy &&
           other.role == this.role &&
+          other.userName == this.userName &&
           other.lat == this.lat &&
           other.lng == this.lng &&
           other.locationConfidence == this.locationConfidence &&
@@ -2698,6 +2736,7 @@ class SosEventsCompanion extends UpdateCompanion<SosEvent> {
   final Value<String> clientUuid;
   final Value<String> triggeredBy;
   final Value<String> role;
+  final Value<String?> userName;
   final Value<double?> lat;
   final Value<double?> lng;
   final Value<String> locationConfidence;
@@ -2710,6 +2749,7 @@ class SosEventsCompanion extends UpdateCompanion<SosEvent> {
     this.clientUuid = const Value.absent(),
     this.triggeredBy = const Value.absent(),
     this.role = const Value.absent(),
+    this.userName = const Value.absent(),
     this.lat = const Value.absent(),
     this.lng = const Value.absent(),
     this.locationConfidence = const Value.absent(),
@@ -2723,6 +2763,7 @@ class SosEventsCompanion extends UpdateCompanion<SosEvent> {
     required String clientUuid,
     required String triggeredBy,
     required String role,
+    this.userName = const Value.absent(),
     this.lat = const Value.absent(),
     this.lng = const Value.absent(),
     required String locationConfidence,
@@ -2740,6 +2781,7 @@ class SosEventsCompanion extends UpdateCompanion<SosEvent> {
     Expression<String>? clientUuid,
     Expression<String>? triggeredBy,
     Expression<String>? role,
+    Expression<String>? userName,
     Expression<double>? lat,
     Expression<double>? lng,
     Expression<String>? locationConfidence,
@@ -2753,6 +2795,7 @@ class SosEventsCompanion extends UpdateCompanion<SosEvent> {
       if (clientUuid != null) 'client_uuid': clientUuid,
       if (triggeredBy != null) 'triggered_by': triggeredBy,
       if (role != null) 'role': role,
+      if (userName != null) 'user_name': userName,
       if (lat != null) 'lat': lat,
       if (lng != null) 'lng': lng,
       if (locationConfidence != null) 'location_confidence': locationConfidence,
@@ -2768,6 +2811,7 @@ class SosEventsCompanion extends UpdateCompanion<SosEvent> {
     Value<String>? clientUuid,
     Value<String>? triggeredBy,
     Value<String>? role,
+    Value<String?>? userName,
     Value<double?>? lat,
     Value<double?>? lng,
     Value<String>? locationConfidence,
@@ -2781,6 +2825,7 @@ class SosEventsCompanion extends UpdateCompanion<SosEvent> {
       clientUuid: clientUuid ?? this.clientUuid,
       triggeredBy: triggeredBy ?? this.triggeredBy,
       role: role ?? this.role,
+      userName: userName ?? this.userName,
       lat: lat ?? this.lat,
       lng: lng ?? this.lng,
       locationConfidence: locationConfidence ?? this.locationConfidence,
@@ -2805,6 +2850,9 @@ class SosEventsCompanion extends UpdateCompanion<SosEvent> {
     }
     if (role.present) {
       map['role'] = Variable<String>(role.value);
+    }
+    if (userName.present) {
+      map['user_name'] = Variable<String>(userName.value);
     }
     if (lat.present) {
       map['lat'] = Variable<double>(lat.value);
@@ -2837,6 +2885,7 @@ class SosEventsCompanion extends UpdateCompanion<SosEvent> {
           ..write('clientUuid: $clientUuid, ')
           ..write('triggeredBy: $triggeredBy, ')
           ..write('role: $role, ')
+          ..write('userName: $userName, ')
           ..write('lat: $lat, ')
           ..write('lng: $lng, ')
           ..write('locationConfidence: $locationConfidence, ')
@@ -3958,6 +4007,7 @@ typedef $$SosEventsTableCreateCompanionBuilder =
       required String clientUuid,
       required String triggeredBy,
       required String role,
+      Value<String?> userName,
       Value<double?> lat,
       Value<double?> lng,
       required String locationConfidence,
@@ -3972,6 +4022,7 @@ typedef $$SosEventsTableUpdateCompanionBuilder =
       Value<String> clientUuid,
       Value<String> triggeredBy,
       Value<String> role,
+      Value<String?> userName,
       Value<double?> lat,
       Value<double?> lng,
       Value<String> locationConfidence,
@@ -4007,6 +4058,11 @@ class $$SosEventsTableFilterComposer
 
   ColumnFilters<String> get role => $composableBuilder(
     column: $table.role,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userName => $composableBuilder(
+    column: $table.userName,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4075,6 +4131,11 @@ class $$SosEventsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get userName => $composableBuilder(
+    column: $table.userName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get lat => $composableBuilder(
     column: $table.lat,
     builder: (column) => ColumnOrderings(column),
@@ -4135,6 +4196,9 @@ class $$SosEventsTableAnnotationComposer
 
   GeneratedColumn<String> get role =>
       $composableBuilder(column: $table.role, builder: (column) => column);
+
+  GeneratedColumn<String> get userName =>
+      $composableBuilder(column: $table.userName, builder: (column) => column);
 
   GeneratedColumn<double> get lat =>
       $composableBuilder(column: $table.lat, builder: (column) => column);
@@ -4200,6 +4264,7 @@ class $$SosEventsTableTableManager
                 Value<String> clientUuid = const Value.absent(),
                 Value<String> triggeredBy = const Value.absent(),
                 Value<String> role = const Value.absent(),
+                Value<String?> userName = const Value.absent(),
                 Value<double?> lat = const Value.absent(),
                 Value<double?> lng = const Value.absent(),
                 Value<String> locationConfidence = const Value.absent(),
@@ -4212,6 +4277,7 @@ class $$SosEventsTableTableManager
                 clientUuid: clientUuid,
                 triggeredBy: triggeredBy,
                 role: role,
+                userName: userName,
                 lat: lat,
                 lng: lng,
                 locationConfidence: locationConfidence,
@@ -4226,6 +4292,7 @@ class $$SosEventsTableTableManager
                 required String clientUuid,
                 required String triggeredBy,
                 required String role,
+                Value<String?> userName = const Value.absent(),
                 Value<double?> lat = const Value.absent(),
                 Value<double?> lng = const Value.absent(),
                 required String locationConfidence,
@@ -4238,6 +4305,7 @@ class $$SosEventsTableTableManager
                 clientUuid: clientUuid,
                 triggeredBy: triggeredBy,
                 role: role,
+                userName: userName,
                 lat: lat,
                 lng: lng,
                 locationConfidence: locationConfidence,
