@@ -110,8 +110,24 @@ class SirdarHomeTab extends StatelessWidget {
             count: 2,
             child: Column(
               children: [
-                _buildListRow(dotColor: AppTheme.ink3, title: 'Water building at the Dump-3 toe', subtitle: 'Pump ran 4 hours. Watch it after the rain, the radar alert is still on.', trailing: '', isTrailingCrit: false),
-                _buildListRow(dotColor: AppTheme.ink3, title: 'Dozer DT-14 reversing alarm is weak', subtitle: 'Workshop informed at 13:10. Keep persons clear on the north side.', trailing: '', isTrailingCrit: false),
+                _buildListRow(
+                  context: context,
+                  dotColor: AppTheme.amberAccent,
+                  title: 'Water accumulation at Dump-3 toe',
+                  subtitle: 'Pump ran 4 hours. High risk of slope failure after rain.',
+                  trailing: 'Action Required',
+                  isTrailingCrit: true,
+                  onTap: () => _showHandoverDetailDialog(context, 'Water accumulation at Dump-3 toe', 'Pump ran 4 hours. High risk of slope failure after rain.\n\nAssigned to: Shift B Sirdar\nStatus: Pending Inspection'),
+                ),
+                _buildListRow(
+                  context: context,
+                  dotColor: AppTheme.ink3,
+                  title: 'Dozer DT-14 reversing alarm weak',
+                  subtitle: 'Workshop informed at 13:10. Keep workers clear on North bench.',
+                  trailing: 'In Progress',
+                  isTrailingCrit: false,
+                  onTap: () => _showHandoverDetailDialog(context, 'Dozer DT-14 reversing alarm weak', 'Workshop informed at 13:10. Keep workers clear on North bench.\n\nAssigned to: Maintenance Workshop\nStatus: Under Repair'),
+                ),
               ],
             ),
           ),
@@ -183,30 +199,73 @@ class SirdarHomeTab extends StatelessWidget {
     );
   }
 
-  Widget _buildListRow({required Color dotColor, required String title, required String subtitle, required String trailing, required bool isTrailingCrit}) {
-    return Container(
-      decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppTheme.lineSoft))),
-      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(width: 9, height: 9, decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle)),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: AppTheme.ink)),
-                const SizedBox(height: 1),
-                Text(subtitle, style: const TextStyle(fontSize: 12, color: AppTheme.ink2)),
-              ],
-            ),
-          ),
-          if (trailing.isNotEmpty) ...[
-            const SizedBox(width: 10),
-            Text(trailing, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: isTrailingCrit ? AppTheme.redDanger : AppTheme.ink2)),
+  void _showHandoverDetailDialog(BuildContext context, String title, String details) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.assignment_turned_in, color: AppTheme.amberAccent),
+            const SizedBox(width: 8),
+            Expanded(child: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
           ],
+        ),
+        content: Text(details, style: const TextStyle(fontSize: 14, height: 1.4)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.amberAccent, foregroundColor: Colors.white),
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.push(context, MaterialPageRoute(
+                builder: (_) => ObservationFormScreen(initialCategory: title),
+              ));
+            },
+            child: const Text('Log Action / Inspection'),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildListRow({
+    required BuildContext context,
+    required Color dotColor,
+    required String title,
+    required String subtitle,
+    required String trailing,
+    required bool isTrailingCrit,
+    VoidCallback? onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppTheme.lineSoft))),
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(width: 9, height: 9, decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: AppTheme.ink)),
+                  const SizedBox(height: 1),
+                  Text(subtitle, style: const TextStyle(fontSize: 12, color: AppTheme.ink2)),
+                ],
+              ),
+            ),
+            if (trailing.isNotEmpty) ...[
+              const SizedBox(width: 10),
+              Text(trailing, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: isTrailingCrit ? AppTheme.redDanger : AppTheme.ink2)),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -264,6 +323,7 @@ class _MyActionsCard extends StatelessWidget {
         final rows = <Widget>[];
         for (final obs in pending) {
           rows.add(_actionRow(
+            context,
             dotColor: AppTheme.amberAccent,
             title: obs.category,
             subtitle: obs.location,
@@ -308,28 +368,71 @@ class _MyActionsCard extends StatelessWidget {
     );
   }
 
-  Widget _actionRow({required Color dotColor, required String title, required String subtitle, required String trailing, required bool isTrailingCrit}) {
-    return Container(
-      decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppTheme.lineSoft))),
-      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(width: 9, height: 9, decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle)),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _actionRow(BuildContext context, {required Color dotColor, required String title, required String subtitle, required String trailing, required bool isTrailingCrit}) {
+    return InkWell(
+      onTap: () {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Row(
               children: [
-                Text(title, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: AppTheme.ink)),
-                const SizedBox(height: 1),
-                Text(subtitle, style: const TextStyle(fontSize: 12, color: AppTheme.ink2)),
+                const Icon(Icons.assignment_turned_in, color: AppTheme.amberAccent),
+                const SizedBox(width: 8),
+                Expanded(child: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
               ],
             ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Location: $subtitle', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                const SizedBox(height: 8),
+                Text('Status: $trailing', style: const TextStyle(fontSize: 13, color: AppTheme.redDanger, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 12),
+                const Text('Observation recorded locally and queued for DB sync.', style: TextStyle(fontSize: 12, color: AppTheme.ink2)),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Close'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.amberAccent, foregroundColor: Colors.white),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => ObservationFormScreen(initialCategory: title),
+                  ));
+                },
+                child: const Text('Edit / Add Note'),
+              ),
+            ],
           ),
-          const SizedBox(width: 10),
-          Text(trailing, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: isTrailingCrit ? AppTheme.redDanger : AppTheme.ink2)),
-        ],
+        );
+      },
+      child: Container(
+        decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppTheme.lineSoft))),
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(width: 9, height: 9, decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: AppTheme.ink)),
+                  const SizedBox(height: 1),
+                  Text(subtitle, style: const TextStyle(fontSize: 12, color: AppTheme.ink2)),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(trailing, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: isTrailingCrit ? AppTheme.redDanger : AppTheme.ink2)),
+          ],
+        ),
       ),
     );
   }

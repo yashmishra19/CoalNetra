@@ -44,6 +44,11 @@ dependencies:
   uuid: ^4.6.0
   fl_chart: ^1.2.0
   http: ^1.6.0
+  # Multi-channel SOS mesh
+  nearby_connections: ^4.1.0       # BT + WiFi-Direct peer discovery (no router needed)
+  permission_handler: ^11.3.1      # Runtime BT / WiFi / location permissions
+  wifi_iot: ^0.3.19+1              # Programmatically enable WiFi on SOS
+  flutter_compass: ^0.8.1          # Heading & compass sensor for directional map & AirTag finder
 
 dev_dependencies:
   flutter_test:

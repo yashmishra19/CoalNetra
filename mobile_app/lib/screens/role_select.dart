@@ -1,14 +1,54 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/user_role.dart';
+import '../services/app_services.dart';
 import '../theme/app_theme.dart';
 import 'sirdar/sirdar_home.dart';
 import 'worker/worker_home.dart';
 import 'contractor/contractor_home.dart';
 
+import 'shared/permissions_gate.dart';
+
 class RoleSelectScreen extends StatelessWidget {
   const RoleSelectScreen({super.key});
 
-  void _navigate(BuildContext context, UserRole role) {
+  /// Each role gets a unique, stable userId so the UDP/Nearby self-filter
+  /// (msg[triggeredBy] != _userId) works correctly across different devices.
+  String _userIdFor(UserRole role) {
+    switch (role) {
+      case UserRole.fieldOfficer:
+        return 'field_officer_01';
+      case UserRole.mineWorker:
+        return 'worker_p_kumar';
+      case UserRole.contractorSup:
+        return 'contractor_a_gupta';
+    }
+  }
+
+  String _roleKey(UserRole role) {
+    switch (role) {
+      case UserRole.fieldOfficer:
+        return 'sirdar';
+      case UserRole.mineWorker:
+        return 'worker';
+      case UserRole.contractorSup:
+        return 'contractor';
+    }
+  }
+
+  Future<void> _navigate(BuildContext context, UserRole role) async {
+    final appServices = Provider.of<AppServices>(context, listen: false);
+
+    // Initialise role-specific services BEFORE navigating so the
+    // MeshSosService listener starts with the correct userId/role.
+    await appServices.initForRole(
+      userId: _userIdFor(role),
+      role: _roleKey(role),
+      userName: role.userName,
+    );
+
+    if (!context.mounted) return;
+
     final user = MockUser(role: role);
     Widget home;
     switch (role) {
@@ -23,13 +63,22 @@ class RoleSelectScreen extends StatelessWidget {
         break;
     }
     Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (_) => home));
+      context,
+      MaterialPageRoute(
+        builder: (_) => PermissionsGateScreen(
+          nextScreen: home,
+          role: _roleKey(role),
+          userId: _userIdFor(role),
+          userName: role.userName,
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A1A), // Slightly off-black to verify rendering
+      backgroundColor: const Color(0xFF1A1A1A),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),

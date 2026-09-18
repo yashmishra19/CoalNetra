@@ -56,9 +56,6 @@ class _WorkerHomeTabState extends State<WorkerHomeTab> {
 
     try {
       final uuid = const Uuid().v4();
-      final ppeSummary = _ppeItems.values
-          .map((item) => '${item.label}: ${item.checked ? "OK" : "MISSING"}')
-          .join(', ');
 
       await db.addObservation(ObservationsCompanion(
         orgId: const drift.Value('CIL-SECL-001'),
@@ -94,6 +91,7 @@ class _WorkerHomeTabState extends State<WorkerHomeTab> {
 
   @override
   Widget build(BuildContext context) {
+    final bottomPad = MediaQuery.of(context).padding.bottom;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -115,13 +113,16 @@ class _WorkerHomeTabState extends State<WorkerHomeTab> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                "MY SAFETY GEAR (PPE)",
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: Colors.grey[700],
-                      letterSpacing: 1.2,
-                      fontWeight: FontWeight.bold,
-                    ),
+              Flexible(
+                child: Text(
+                  "MY SAFETY GEAR (PPE)",
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: Colors.grey[700],
+                        letterSpacing: 1.2,
+                        fontWeight: FontWeight.bold,
+                      ),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -161,7 +162,8 @@ class _WorkerHomeTabState extends State<WorkerHomeTab> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
-          const SizedBox(height: 80), // Space for FAB & Nav
+          // Responsive bottom padding for nav bar + system inset
+          SizedBox(height: 16 + (bottomPad > 0 ? bottomPad : 60)),
         ],
       ),
     );
@@ -333,20 +335,27 @@ class _WorkerHomeTabState extends State<WorkerHomeTab> {
 
   Widget _buildPPEGrid() {
     final keys = _ppeItems.keys.toList();
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: keys.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 0.9,
-      ),
-      itemBuilder: (context, index) {
-        final key = keys[index];
-        final item = _ppeItems[key]!;
-        return _buildPPEItem(key, item.icon, item.label, item.checked, item.mandatory);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Responsive: narrower screens need a shorter aspect ratio
+        final cellWidth = (constraints.maxWidth - 24) / 3; // 3 cols, 2 gaps of 12
+        final aspectRatio = (cellWidth / (cellWidth * 1.1)).clamp(0.80, 1.0);
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: keys.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: aspectRatio,
+          ),
+          itemBuilder: (context, index) {
+            final key = keys[index];
+            final item = _ppeItems[key]!;
+            return _buildPPEItem(key, item.icon, item.label, item.checked, item.mandatory);
+          },
+        );
       },
     );
   }

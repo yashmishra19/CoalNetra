@@ -72,6 +72,7 @@ class SosEvents extends Table {
   TextColumn get clientUuid => text().unique()();
   TextColumn get triggeredBy => text()();
   TextColumn get role => text()();
+  TextColumn get userName => text().nullable()();
   RealColumn get lat => real().nullable()();
   RealColumn get lng => real().nullable()();
   TextColumn get locationConfidence => text()(); // 'gps_live' | 'last_known' | 'unknown'
@@ -89,7 +90,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -99,6 +100,9 @@ class AppDatabase extends _$AppDatabase {
       if (from < 3) {
         await m.createTable(locationPings);
         await m.createTable(sosEvents);
+      }
+      if (from < 4) {
+        await m.addColumn(sosEvents, sosEvents.userName);
       }
     },
   );
