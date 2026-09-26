@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -79,7 +79,7 @@ void main() {
           Provider<SyncService?>.value(value: _syncService),
           ChangeNotifierProvider<AppServices>.value(value: _appServices),
         ],
-        child: CoalGovApp(initError: initError),
+        child: CoalNetraApp(initError: initError),
       ),
     );
   }, (error, stackTrace) {
@@ -88,9 +88,9 @@ void main() {
   });
 }
 
-class CoalGovApp extends StatelessWidget {
+class CoalNetraApp extends StatelessWidget {
   final String? initError;
-  const CoalGovApp({super.key, this.initError});
+  const CoalNetraApp({super.key, this.initError});
 
   @override
   Widget build(BuildContext context) {

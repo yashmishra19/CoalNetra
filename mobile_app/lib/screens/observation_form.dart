@@ -27,7 +27,12 @@ class _ObservationFormScreenState extends State<ObservationFormScreen> {
     'Near-miss',
     'Incident',
     'Statutory Reading',
-    'CAPA Closure'
+    'CAPA Closure',
+    'PPE Compliance Checklist',
+    'Gas Level Audit (DGMS)',
+    'Strata Control Inspection',
+    'Haulage Track Safety Check',
+    'Air Flow Measurement',
   ];
 
   final List<String> _severities = ['Low', 'Medium', 'High', 'Critical'];
@@ -36,6 +41,9 @@ class _ObservationFormScreenState extends State<ObservationFormScreen> {
   void initState() {
     super.initState();
     _category = widget.initialCategory ?? 'Safety Hazard';
+    if (!_categories.contains(_category)) {
+      _categories.insert(0, _category);
+    }
     _determinePosition();
   }
 
@@ -111,6 +119,8 @@ class _ObservationFormScreenState extends State<ObservationFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final selectedCategory = _categories.contains(_category) ? _category : _categories.first;
+
     return Scaffold(
       backgroundColor: AppTheme.offWhiteBackground,
       appBar: AppBar(
@@ -137,7 +147,7 @@ class _ObservationFormScreenState extends State<ObservationFormScreen> {
                   Expanded(
                     flex: 2,
                     child: DropdownButtonFormField<String>(
-                      initialValue: _category,
+                      value: selectedCategory,
                       decoration: const InputDecoration(labelText: 'Report Category'),
                       items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 13)))).toList(),
                       onChanged: (v) => setState(() => _category = v!),
@@ -146,7 +156,7 @@ class _ObservationFormScreenState extends State<ObservationFormScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      initialValue: _severity,
+                      value: _severities.contains(_severity) ? _severity : _severities[1],
                       decoration: const InputDecoration(labelText: 'Severity'),
                       items: _severities.map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 13)))).toList(),
                       onChanged: (v) => setState(() => _severity = v!),

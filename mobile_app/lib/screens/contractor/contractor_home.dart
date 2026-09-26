@@ -45,6 +45,60 @@ class _ContractorHomeState extends State<ContractorHome> {
       }
     }
   }
+  void _showNotificationsModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1E1E1E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.notifications_active, color: AppTheme.amberAccent, size: 24),
+                const SizedBox(width: 10),
+                const Text('Contractor Compliance Alerts',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                const Spacer(),
+                IconButton(icon: const Icon(Icons.close, color: Colors.white54), onPressed: () => Navigator.pop(ctx)),
+              ],
+            ),
+            const Divider(color: Colors.white24),
+            const SizedBox(height: 8),
+            _buildNotificationItem('VTC Expiry Warning', 'Contractor #4 - 3 workers due for VTC renewal', AppTheme.redDanger),
+            _buildNotificationItem('Offline Mesh Sync Complete', '14 observations synced via Wi-Fi Direct relay', AppTheme.greenVerified),
+            _buildNotificationItem('DGMS Statutory Return Due', 'Monthly Form IV return deadline in 3 days', AppTheme.amberAccent),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNotificationItem(String title, String desc, Color color) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withAlpha(15),
+        borderRadius: BorderRadius.circular(8),
+        border: Border(left: BorderSide(color: color, width: 3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: color)),
+          const SizedBox(height: 2),
+          Text(desc, style: const TextStyle(fontSize: 11, color: Colors.white70)),
+        ],
+      ),
+    );
+  }
 
   final List<Widget> _tabs = const [
     DashboardTab(),
@@ -69,15 +123,23 @@ class _ContractorHomeState extends State<ContractorHome> {
                 children: [
                   const Icon(Icons.shield, color: AppTheme.amberAccent, size: 28),
                   const SizedBox(width: 12),
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('CoalGov Admin', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                      Text('Contractor Management Portal', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                    ],
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('CoalNetra Admin',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                            overflow: TextOverflow.ellipsis),
+                        Text('Contractor Management Portal',
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                            overflow: TextOverflow.ellipsis),
+                      ],
+                    ),
                   ),
-                  const Spacer(),
-                  IconButton(icon: const Icon(Icons.notifications_none), onPressed: () {}),
+                  IconButton(
+                    icon: const Icon(Icons.notifications_none, color: AppTheme.amberAccent),
+                    onPressed: () => _showNotificationsModal(context),
+                  ),
                 ],
               ),
             ),

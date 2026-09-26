@@ -103,7 +103,7 @@ class RoleSelectScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               const Text(
-                'CoalGov',
+                'CoalNetra',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white,

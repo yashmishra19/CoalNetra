@@ -30,7 +30,7 @@ class CoalAppBar extends StatelessWidget implements PreferredSizeWidget {
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('CoalGov',
+          const Text('CoalNetra',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 15,
