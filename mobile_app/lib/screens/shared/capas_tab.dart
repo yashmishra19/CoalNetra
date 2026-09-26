@@ -82,88 +82,99 @@ class CapasTab extends StatelessWidget {
   Widget _buildCard(_MockCapa capa) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border(
-          left: BorderSide(color: _severityColor(capa.severity), width: 4),
-          top: BorderSide(color: Colors.grey.shade200),
-          right: BorderSide(color: Colors.grey.shade200),
-          bottom: BorderSide(color: Colors.grey.shade200),
-        ),
+        border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withAlpha(8),
-              blurRadius: 4,
-              offset: const Offset(0, 2)),
+            color: Colors.black.withAlpha(8),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(capa.id,
-                  style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.amberAccent)),
-              const Spacer(),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: _severityColor(capa.severity).withAlpha(30),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  capa.severity,
-                  style: TextStyle(
-                      fontSize: 10,
-                      color: _severityColor(capa.severity),
-                      fontWeight: FontWeight.bold),
+                width: 4,
+                color: _severityColor(capa.severity),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(capa.id,
+                              style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.amberAccent)),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: _severityColor(capa.severity).withAlpha(30),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              capa.severity,
+                              style: TextStyle(
+                                  fontSize: 10,
+                                  color: _severityColor(capa.severity),
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(capa.title,
+                          style: const TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(Icons.person_outline, size: 13, color: Colors.grey),
+                          const SizedBox(width: 4),
+                          Text(capa.assignedTo,
+                              style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                          const Spacer(),
+                          const Icon(Icons.calendar_today_outlined,
+                              size: 12, color: Colors.grey),
+                          const SizedBox(width: 4),
+                          Text('Due: ${capa.dueDate}',
+                              style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                        ],
+                      ),
+                      if (capa.escalationLevel > 0) ...[
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            const Icon(Icons.arrow_upward,
+                                size: 12, color: AppTheme.redDanger),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Escalated to Level ${capa.escalationLevel}',
+                              style: const TextStyle(
+                                  fontSize: 11, color: AppTheme.redDanger),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          Text(capa.title,
-              style: const TextStyle(
-                  fontSize: 14, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              const Icon(Icons.person_outline, size: 13, color: Colors.grey),
-              const SizedBox(width: 4),
-              Text(capa.assignedTo,
-                  style:
-                      const TextStyle(fontSize: 12, color: Colors.grey)),
-              const Spacer(),
-              const Icon(Icons.calendar_today_outlined,
-                  size: 12, color: Colors.grey),
-              const SizedBox(width: 4),
-              Text('Due: ${capa.dueDate}',
-                  style:
-                      const TextStyle(fontSize: 12, color: Colors.grey)),
-            ],
-          ),
-          if (capa.escalationLevel > 0) ...[
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                const Icon(Icons.arrow_upward,
-                    size: 12, color: AppTheme.redDanger),
-                const SizedBox(width: 4),
-                Text(
-                  'Escalated to Level ${capa.escalationLevel}',
-                  style: const TextStyle(
-                      fontSize: 11, color: AppTheme.redDanger),
-                ),
-              ],
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }
