@@ -6,6 +6,10 @@ import 'package:path/path.dart' as p;
 
 part 'database.g.dart';
 
+// Location confidence constants
+const String locConfidenceLive = 'gps_live';
+const String locConfidenceLastKnown = 'gps_last_known';
+
 // Observations table
 class Observations extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -83,15 +87,44 @@ class SosSignals extends Table {
   Set<Column> get primaryKey => {clientUuid};
 }
 
+// Location pings table — stores periodic GPS readings
+class LocationPings extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get clientUuid => text().unique()();
+  TextColumn get reportedBy => text()();
+  TextColumn get role => text()();
+  RealColumn get lat => real()();
+  RealColumn get lng => real()();
+  RealColumn get accuracy => real().nullable()();
+  TextColumn get locationConfidence => text().withDefault(const Constant('gps_last_known'))();
+  DateTimeColumn get capturedAt => dateTime().withDefault(currentDateAndTime)();
+  IntColumn get syncStatus => integer().withDefault(const Constant(0))();
+}
+
+// SOS events table — stores emergency distress signals
+class SosEvents extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get clientUuid => text().unique()();
+  TextColumn get triggeredBy => text()();
+  TextColumn get role => text()();
+  TextColumn get userName => text().nullable()();
+  RealColumn get lat => real().nullable()();
+  RealColumn get lng => real().nullable()();
+  TextColumn get locationConfidence => text().withDefault(const Constant('unknown'))();
+  TextColumn get sentViaChannel => text().withDefault(const Constant('cellular'))();
+  DateTimeColumn get triggeredAt => dateTime().withDefault(currentDateAndTime)();
+  IntColumn get syncStatus => integer().withDefault(const Constant(0))();
+}
+
 @DriftDatabase(
-  tables: [Observations, Evidences, Grievances, CachedObligations, SosSignals],
+  tables: [Observations, Evidences, Grievances, CachedObligations, SosSignals, LocationPings, SosEvents],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
   AppDatabase.forTesting() : super(NativeDatabase.memory());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -105,6 +138,8 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 4) await m.createTable(cachedObligations);
       if (from < 5) await m.createTable(sosSignals);
+      if (from < 6) await m.createTable(locationPings);
+      if (from < 7) await m.createTable(sosEvents);
     },
   );
 
@@ -374,6 +409,62 @@ class AppDatabase extends _$AppDatabase {
           (t) => OrderingTerm(expression: t.id, mode: OrderingMode.desc),
         ]))
         .watch();
+  }
+
+  // ── LocationPings methods ──
+
+  Future<int> addLocationPing(LocationPingsCompanion entry) {
+    return into(locationPings).insert(entry);
+  }
+
+  Stream<List<LocationPing>> watchRecentLocationPings() {
+    return (select(locationPings)
+          ..orderBy([
+                (t) => OrderingTerm(
+                    expression: t.capturedAt, mode: OrderingMode.desc),
+              ])
+          ..limit(50))
+        .watch();
+  }
+
+  Future<List<LocationPing>> getPendingLocationPings() {
+    return (select(locationPings)
+          ..where((t) => t.syncStatus.equals(0)))
+        .get();
+  }
+
+  Future<void> markLocationPingSynced(String clientUuid) async {
+    await (update(locationPings)
+          ..where((t) => t.clientUuid.equals(clientUuid)))
+        .write(const LocationPingsCompanion(syncStatus: Value(1)));
+  }
+
+  // ── SosEvents methods ──
+
+  Future<int> addSosEvent(SosEventsCompanion entry) {
+    return into(sosEvents).insert(entry);
+  }
+
+  Stream<List<SosEvent>> watchRecentSosEvents() {
+    return (select(sosEvents)
+          ..orderBy([
+                (t) => OrderingTerm(
+                    expression: t.triggeredAt, mode: OrderingMode.desc),
+              ])
+          ..limit(50))
+        .watch();
+  }
+
+  Future<List<SosEvent>> getPendingSosEvents() {
+    return (select(sosEvents)
+          ..where((t) => t.syncStatus.equals(0)))
+        .get();
+  }
+
+  Future<void> markSosEventSynced(String clientUuid) async {
+    await (update(sosEvents)
+          ..where((t) => t.clientUuid.equals(clientUuid)))
+        .write(const SosEventsCompanion(syncStatus: Value(1)));
   }
 }
 

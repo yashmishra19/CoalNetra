@@ -13,6 +13,16 @@ class AppTheme {
   static const Color cobaltBlue = Color(0xFF2563EB); // Primary Action Blue
   static const Color borderGrey = Color(0xFFE5E7EB);
   static const Color textMuted = Color(0xFF6B7280);
+  
+  // Extra UI Colors
+  static const Color ink = Color(0xFF1F2937);
+  static const Color ink2 = Color(0xFF4B5563);
+  static const Color ink3 = Color(0xFF9CA3AF);
+  static const Color panel = Color(0xFFFFFFFF);
+  static const Color line = Color(0xFFE5E7EB);
+  static const Color lineSoft = Color(0xFFF3F4F6);
+  static const Color graphite = Color(0xFF374151);
+  static const Color steel = Color(0xFF6B7280);
 
   static ThemeData get lightTheme {
     return ThemeData(

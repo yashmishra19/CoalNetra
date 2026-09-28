@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter_compass/flutter_compass.dart';
 import 'package:provider/provider.dart';
 import '../../database/database.dart';
 import '../../theme/app_theme.dart';
@@ -21,8 +20,8 @@ class _SirdarMapTabState extends State<SirdarMapTab> with SingleTickerProviderSt
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
-  // Compass stream
-  StreamSubscription<CompassEvent>? _compassSubscription;
+  // Compass heading (simulated — flutter_compass not available)
+  Timer? _compassTimer;
   double _heading = 0.0; // Heading in degrees (0..360)
   bool _headingUpMode = true; // True = Heading-Up mode, False = North-Up mode
 
@@ -33,11 +32,12 @@ class _SirdarMapTabState extends State<SirdarMapTab> with SingleTickerProviderSt
       ..repeat(reverse: true);
     _pulseAnimation = Tween<double>(begin: 0.8, end: 1.3).animate(_pulseController);
 
-    // Listen to live device compass updates
-    _compassSubscription = FlutterCompass.events?.listen((event) {
-      if (mounted && event.heading != null) {
+    // Simulated compass: slowly rotates heading for demo purposes
+    // Replace with FlutterCompass.events?.listen(...) when flutter_compass is added
+    _compassTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+      if (mounted) {
         setState(() {
-          _heading = event.heading!;
+          _heading = (_heading + 3.0) % 360.0;
         });
       }
     });
@@ -45,7 +45,7 @@ class _SirdarMapTabState extends State<SirdarMapTab> with SingleTickerProviderSt
 
   @override
   void dispose() {
-    _compassSubscription?.cancel();
+    _compassTimer?.cancel();
     _pulseController.dispose();
     super.dispose();
   }

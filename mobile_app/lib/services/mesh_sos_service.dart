@@ -177,7 +177,7 @@ class MeshSosService {
 
   Future<bool> _postSosToServer(Map<String, dynamic> payload, String uuid) async {
     try {
-      final baseUrl = SyncService.effectiveApiBaseUrl;
+      final baseUrl = SyncService.apiBaseUrl;
       final response = await http.post(
         Uri.parse('$baseUrl/api/sync/push'),
         headers: {
@@ -221,7 +221,7 @@ class MeshSosService {
 
   Future<void> _relayPeerSos(Map<String, dynamic> msg) async {
     try {
-      final baseUrl = SyncService.effectiveApiBaseUrl;
+      final baseUrl = SyncService.apiBaseUrl;
       final relayPayload = {
         ...msg,
         'meshRelayedBy': _userId,
