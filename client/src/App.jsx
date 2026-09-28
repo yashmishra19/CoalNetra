@@ -32,11 +32,11 @@ export default function App() {
           {/* Role Selection (any authenticated user) */}
           <Route path="/select-role" element={<SelectRole />} />
 
-          {/* Mine Manager Routes */}
+          {/* Mine Manager + Field Officer Routes */}
           <Route
             path="/"
             element={
-              <ProtectedRoute allowedRoles={['mine_manager', 'both']}>
+              <ProtectedRoute allowedRoles={['mine_manager', 'field_officer', 'both']}>
                 <AppProvider><Today /></AppProvider>
               </ProtectedRoute>
             }
