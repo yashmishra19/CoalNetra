@@ -4,12 +4,12 @@ import TopBar from './TopBar';
 
 export default function PageShell({ children }) {
   return (
-    <div className="flex min-h-screen bg-page-bg font-sans">
+    <div className="min-h-screen bg-page-bg font-sans flex text-brand-primary">
       {/* Fixed Persistent Dark Sidebar */}
       <Sidebar />
 
       {/* Main Layout Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="ml-[220px] min-h-screen bg-page-bg flex-1 flex flex-col min-w-0">
         {/* Global Top Bar */}
         <TopBar />
 
@@ -21,3 +21,4 @@ export default function PageShell({ children }) {
     </div>
   );
 }
+

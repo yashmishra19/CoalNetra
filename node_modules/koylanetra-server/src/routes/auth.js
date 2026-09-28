@@ -1,32 +1,90 @@
 import { Router } from 'express';
+import { supabase, createUserClient } from '../supabase.js';
 
 const router = Router();
 
-const mockUsers = [
-  { id: '77777777-7777-7777-7777-777777777702', email: 'manager@koylanetra.gov.in', password: 'KoylaManager@2026', name: 'Rajesh Kumar', role: 'mine_manager', designation: 'Statutory Mine Manager', site: 'Demo OCP-1', mineId: '55555555-5555-5555-5555-555555555501' },
-  { id: '77777777-7777-7777-7777-777777777703', email: 'regulator@dgms.gov.in', password: 'DgmsRegulator@2026', name: 'Dr. V. K. Sharma', role: 'regulator', designation: 'Director of Mines Safety', region: 'DGMS Nagpur Region-2', regionId: '11111111-1111-1111-1111-111111111101', initials: 'VS' },
-  { id: '77777777-7777-7777-7777-777777777701', email: 'fo@koylanetra.gov.in', password: 'KoylaField@2026', name: 'B. Oraon', role: 'field_officer', designation: 'Overman / Field Safety Officer', site: 'Demo OCP-1', mineId: '55555555-5555-5555-5555-555555555501' },
-  { id: 'u1', email: 'mahato@coalgov.in', password: 'mine123', name: 'R. Mahato', role: 'mine_manager', designation: 'Mine Manager', site: 'Demo OCP-1', mineId: '55555555-5555-5555-5555-555555555501', avatar: 'https://i.pravatar.cc/80?img=12' },
-  { id: 'u2', email: 'kulkarni@dgms.gov.in', password: 'dgms123', name: 'P.B. Kulkarni', role: 'regulator', designation: 'Director of Mines Safety', region: 'DGMS Nagpur Region-2', regionId: '11111111-1111-1111-1111-111111111101', initials: 'PK' },
-  { id: 'u3', email: 'demo@koylanetra.in', password: 'demo', name: 'Demo User', role: 'both', designation: 'Demo Account' }
-];
+// ── POST /api/auth/login ──────────────────────────────────────────────────────
+// Signs in with Supabase Auth (email + password).
+// Returns the Supabase JWT access token + user profile from public.users.
+router.post('/login', async (req, res) => {
+  const { email, password } = req.body || {};
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required' });
+  }
 
-router.post('/login', (req, res) => {
-  const { email, password } = req.body;
-  const user = mockUsers.find(u => u.email === email && u.password === password);
-  if (!user) return res.status(401).json({ error: 'Invalid email or password' });
-  const { password: _, ...safeUser } = user;
-  res.json({ user: safeUser, token: 'mock-jwt-' + user.id });
+  // 1. Sign in with Supabase Auth
+  const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (authError || !authData?.session) {
+    return res.status(401).json({ error: authError?.message || 'Invalid email or password' });
+  }
+
+  const { session, user: authUser } = authData;
+
+  // 2. Fetch the app profile from public.users using the user's own token (RLS applies)
+  const userClient = createUserClient(session.access_token);
+  const { data: profile, error: profileError } = await userClient
+    .from('users')
+    .select('id, email, full_name, role, designation, mine_id, region_id')
+    .eq('id', authUser.id)
+    .single();
+
+  if (profileError || !profile) {
+    // Profile might not exist yet — return a minimal user object
+    console.warn('Profile not found for', authUser.id, profileError?.message);
+    const minimalUser = {
+      id: authUser.id,
+      email: authUser.email,
+      full_name: authUser.email,
+      role: 'field_officer',
+      designation: '',
+      mine_id: null,
+      region_id: null,
+    };
+    return res.json({ user: minimalUser, token: session.access_token });
+  }
+
+  return res.json({ user: profile, token: session.access_token });
 });
 
-router.get('/me', (req, res) => {
+// ── GET /api/auth/me ──────────────────────────────────────────────────────────
+// Validates the Bearer token and returns the user profile.
+router.get('/me', async (req, res) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (!token) return res.status(401).json({ error: 'Not authenticated' });
-  const userId = token.replace('mock-jwt-', '');
-  const user = mockUsers.find(u => u.id === userId);
-  if (!user) return res.status(401).json({ error: 'Invalid token' });
-  const { password: _, ...safeUser } = user;
-  res.json({ user: safeUser });
+
+  // Verify the token by calling Supabase
+  const { data: { user: authUser }, error } = await supabase.auth.getUser(token);
+  if (error || !authUser) {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+
+  // Fetch profile using the user's own token
+  const userClient = createUserClient(token);
+  const { data: profile, error: profileError } = await userClient
+    .from('users')
+    .select('id, email, full_name, role, designation, mine_id, region_id')
+    .eq('id', authUser.id)
+    .single();
+
+  if (profileError || !profile) {
+    return res.json({
+      user: {
+        id: authUser.id,
+        email: authUser.email,
+        full_name: authUser.email,
+        role: 'field_officer',
+        designation: '',
+        mine_id: null,
+        region_id: null,
+      },
+    });
+  }
+
+  return res.json({ user: profile });
 });
 
 export default router;

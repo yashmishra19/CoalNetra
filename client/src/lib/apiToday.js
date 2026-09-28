@@ -4,12 +4,13 @@
  */
 
 import { mockTodayData } from '../data/mockToday';
+import { apiFetch } from './apiFetch';
 
 const API = '/api/today';
 
 export async function getTodayDashboard() {
   try {
-    const res = await fetch(API);
+    const res = await apiFetch(API);
     if (!res.ok) throw new Error('Failed to fetch today dashboard');
     return await res.json();
   } catch (err) {

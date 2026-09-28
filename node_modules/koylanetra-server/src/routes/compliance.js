@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { supabase } from '../supabase.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -9,10 +9,10 @@ const DEMO_REGION_ID = '11111111-1111-1111-1111-111111111101';
 // ═══════════════════════════════════════════
 //  GET /api/obligations
 // ═══════════════════════════════════════════
-router.get('/obligations', async (req, res) => {
+router.get('/obligations', requireAuth, async (req, res) => {
   try {
     const mineId = req.query.mineId || DEMO_MINE_ID;
-    const { data, error } = await supabase.rpc('get_obligations', { p_mine_id: mineId });
+    const { data, error } = await req.userClient.rpc('get_obligations', { p_mine_id: mineId });
     if (error) throw error;
 
     const now = new Date();
@@ -45,10 +45,10 @@ router.get('/obligations', async (req, res) => {
 // ═══════════════════════════════════════════
 //  GET /api/capas
 // ═══════════════════════════════════════════
-router.get('/capas', async (req, res) => {
+router.get('/capas', requireAuth, async (req, res) => {
   try {
     const mineId = req.query.mineId || DEMO_MINE_ID;
-    const { data, error } = await supabase.rpc('get_capas', { p_mine_id: mineId });
+    const { data, error } = await req.userClient.rpc('get_capas', { p_mine_id: mineId });
     if (error) throw error;
 
     const now = new Date();
@@ -89,10 +89,10 @@ router.get('/capas', async (req, res) => {
 // ═══════════════════════════════════════════
 //  GET /api/incidents
 // ═══════════════════════════════════════════
-router.get('/incidents', async (req, res) => {
+router.get('/incidents', requireAuth, async (req, res) => {
   try {
     const mineId = req.query.mineId || DEMO_MINE_ID;
-    const { data, error } = await supabase.rpc('get_incidents', { p_mine_id: mineId });
+    const { data, error } = await req.userClient.rpc('get_incidents', { p_mine_id: mineId });
     if (error) throw error;
     res.json({ incidents: data || [], count: (data || []).length, _source: 'supabase_live' });
   } catch (err) {
@@ -104,10 +104,10 @@ router.get('/incidents', async (req, res) => {
 // ═══════════════════════════════════════════
 //  GET /api/directions
 // ═══════════════════════════════════════════
-router.get('/directions', async (req, res) => {
+router.get('/directions', requireAuth, async (req, res) => {
   try {
     const regionId = req.query.regionId || DEMO_REGION_ID;
-    const { data, error } = await supabase.rpc('get_directions', { p_region_id: regionId });
+    const { data, error } = await req.userClient.rpc('get_directions', { p_region_id: regionId });
     if (error) throw error;
 
     const now = new Date();
@@ -127,12 +127,12 @@ router.get('/directions', async (req, res) => {
 });
 
 // ═══════════════════════════════════════════
-//  GET /api/observations
+//  GET /api/observations  (field officer inserts via POST)
 // ═══════════════════════════════════════════
-router.get('/observations', async (req, res) => {
+router.get('/observations', requireAuth, async (req, res) => {
   try {
     const mineId = req.query.mineId || DEMO_MINE_ID;
-    const { data, error } = await supabase.rpc('get_observations', { p_mine_id: mineId });
+    const { data, error } = await req.userClient.rpc('get_observations', { p_mine_id: mineId });
     if (error) throw error;
     const limit = parseInt(req.query.limit) || 50;
     res.json({ observations: (data || []).slice(0, limit), count: (data || []).length, _source: 'supabase_live' });
@@ -143,24 +143,70 @@ router.get('/observations', async (req, res) => {
 });
 
 // ═══════════════════════════════════════════
+//  POST /api/observations  (field officer only)
+// ═══════════════════════════════════════════
+router.post('/observations', requireAuth, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const userId = req.authUser.id;
+
+    const DEMO_MINE_ID_CONST = '55555555-5555-5555-5555-555555555501';
+    const DEMO_AREA_ID = '44444444-4444-4444-4444-444444444401';
+    const DEMO_SUBSIDIARY_ID = '33333333-3333-3333-3333-333333333301';
+    const DEMO_DISTRICT_ID = '22222222-2222-2222-2222-222222222201';
+    const DEMO_REGION_ID_CONST = '11111111-1111-1111-1111-111111111101';
+    const DEMO_SECTION_ID = '66666666-6666-6666-6666-666666666601';
+
+    const row = {
+      client_uuid: body.clientUuid || crypto.randomUUID(),
+      mine_id: body.mineId || DEMO_MINE_ID_CONST,
+      mine_name: body.mineName || 'Demo OCP-1',
+      area_id: DEMO_AREA_ID,
+      subsidiary_id: DEMO_SUBSIDIARY_ID,
+      district_id: DEMO_DISTRICT_ID,
+      dgms_region_id: DEMO_REGION_ID_CONST,
+      section_id: DEMO_SECTION_ID,
+      reported_by: userId,   // always use the logged-in user's UUID
+      category: body.category || 'Safety Hazard',
+      severity: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].includes(String(body.severity || '').toUpperCase())
+        ? String(body.severity).toUpperCase() : 'MEDIUM',
+      description: body.description || body.category || 'Field observation',
+      checkin_method: body.checkinMethod === 'QR' ? 'QR' : 'GPS',
+      device_id: body.deviceId || 'web-client',
+      client_created_at: body.clientCreatedAt || new Date().toISOString(),
+    };
+
+    const { data, error } = await req.userClient
+      .from('observations')
+      .insert(row)
+      .select('id, client_uuid')
+      .single();
+
+    if (error) throw error;
+    res.status(201).json({ observation: data, _source: 'supabase_live' });
+  } catch (err) {
+    console.error('POST observations error:', err);
+    res.status(500).json({ error: 'Failed to create observation', details: err.message });
+  }
+});
+
+// ═══════════════════════════════════════════
 //  GET /api/mine
 // ═══════════════════════════════════════════
-router.get('/mine', async (req, res) => {
+router.get('/mine', requireAuth, async (req, res) => {
   try {
     const mineId = req.query.mineId || DEMO_MINE_ID;
 
     const [mineResult, sectionsResult, riskResult] = await Promise.all([
-      supabase
+      req.userClient
         .from('mines')
         .select('id, name, code, mine_type')
         .eq('id', mineId)
         .single(),
-      supabase.rpc('get_sections', { p_mine_id: mineId }),
-      supabase.rpc('get_risk_score', { p_mine_id: mineId }),
+      req.userClient.rpc('get_sections', { p_mine_id: mineId }),
+      req.userClient.rpc('get_risk_score', { p_mine_id: mineId }),
     ]);
 
-    // mines table is accessible via RLS (any authenticated user sees their mine)
-    // but anon key may not be authenticated — try direct query first, fall back gracefully
     const mine = mineResult.data || { id: mineId, name: 'Demo OCP-1', code: 'WCL-WANI-DOCP1', mine_type: 'OPENCAST' };
 
     res.json({

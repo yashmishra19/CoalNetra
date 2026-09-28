@@ -1,95 +1,66 @@
 import React from 'react';
-import Card from './Card';
-import StatusDot from './StatusDot';
-import ProgressBar from './ProgressBar';
 
 export default function StatCard({
-  variant = 'simple',
   title,
+  label,
   value,
   secondaryValue,
+  suffix,
   subtext,
-  status = 'neutral',
-  accentColor,
+  detail,
   trend,
-  progress,
+  dot,
   className = '',
 }) {
   const trendColorMap = {
-    critical: 'text-red-600',
-    warning: 'text-amber-600',
-    good: 'text-emerald-600',
+    critical: 'text-status-critical',
+    warning: 'text-status-warning',
+    good: 'text-status-good',
   };
 
-  if (variant === 'kpi') {
-    return (
-      <Card
-        accentColor={accentColor || status}
-        accentHeight="h-1"
-        className={`p-3.5 hover:shadow-md transition-shadow ${className}`}
-      >
-        <div className="text-[11px] font-medium text-gray-500 leading-tight">
-          {title}
+  const displayTitle = label || title;
+  const displaySuffix = suffix || secondaryValue;
+  const displayDetail = detail || subtext;
+
+  return (
+    <div className={`bg-white border border-page-border rounded-xl p-5 flex flex-col justify-between ${className}`}>
+      <div>
+        <div className="text-[12px] font-semibold uppercase tracking-wider text-status-neutral flex items-center">
+          {dot && (
+            <span className={`w-2 h-2 rounded-full inline-block mr-1.5 ${dot}`} />
+          )}
+          {displayTitle}
         </div>
-        <div className="flex items-baseline gap-1.5 mt-1.5">
-          <span className="text-2xl font-bold text-gray-950 tracking-tight leading-none">
+
+        <div className="flex items-baseline gap-1.5 mt-2">
+          <span className="text-[30px] font-bold text-brand-primary leading-none">
             {value}
           </span>
+
           {trend && (
             <span
-              className={`text-xs font-semibold flex items-center ${
-                trendColorMap[trend.color] || 'text-gray-600'
+              className={`text-[12px] font-semibold flex items-center ${
+                trendColorMap[trend.color] || 'text-status-neutral'
               }`}
             >
               {trend.direction === 'up' ? '▲' : '▼'} {trend.value}
             </span>
           )}
-          {secondaryValue && (
-            <span className="text-sm font-normal text-gray-500">
-              {secondaryValue}
+
+          {displaySuffix && (
+            <span className="text-[14px] font-medium text-status-neutral">
+              {displaySuffix}
             </span>
           )}
         </div>
-        {subtext && (
-          <div className="text-[11px] text-gray-500 mt-1.5 leading-snug">
-            {subtext}
-          </div>
-        )}
-      </Card>
-    );
-  }
-
-  return (
-    <Card className={`p-3.5 hover:shadow-xs transition-shadow ${className}`}>
-      <div className="flex items-center gap-1.5">
-        <StatusDot status={status} size="sm" />
-        <span className="text-[11px] font-semibold text-gray-600 truncate leading-tight">
-          {title}
-        </span>
       </div>
 
-      <div className="flex items-baseline gap-1 mt-1.5">
-        <span className="text-xl font-bold text-gray-950 tracking-tight leading-none">
-          {value}
-        </span>
-        {secondaryValue && (
-          <span className="text-xs font-normal text-gray-500">
-            {secondaryValue}
-          </span>
-        )}
-      </div>
-
-      {progress !== undefined && (
-        <div className="mt-2">
-          <ProgressBar value={progress} color={status} height="h-1.5" />
+      {displayDetail && (
+        <div className="text-[12px] text-status-neutral mt-1 leading-snug">
+          {displayDetail}
         </div>
       )}
-
-      {subtext && (
-        <div className="text-[11px] text-gray-500 mt-1.5 leading-snug">
-          {subtext}
-        </div>
-      )}
-    </Card>
+    </div>
   );
 }
+

@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import { supabase } from '../supabase.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
 const DEMO_MINE_ID = '55555555-5555-5555-5555-555555555501';
 
-router.get('/', async (req, res) => {
+router.get('/', requireAuth, async (req, res) => {
   try {
     // Use SECURITY DEFINER RPC functions to bypass RLS for server-to-server calls
     const [
@@ -17,13 +17,13 @@ router.get('/', async (req, res) => {
       sectionsResult,
       riskResult,
     ] = await Promise.all([
-      supabase.rpc('get_mine_dashboard', { p_mine_id: DEMO_MINE_ID }),
-      supabase.rpc('get_obligations', { p_mine_id: DEMO_MINE_ID }),
-      supabase.rpc('get_capas', { p_mine_id: DEMO_MINE_ID }),
-      supabase.rpc('get_incidents', { p_mine_id: DEMO_MINE_ID }),
-      supabase.rpc('get_observations', { p_mine_id: DEMO_MINE_ID }),
-      supabase.rpc('get_sections', { p_mine_id: DEMO_MINE_ID }),
-      supabase.rpc('get_risk_score', { p_mine_id: DEMO_MINE_ID }),
+      req.userClient.rpc('get_mine_dashboard', { p_mine_id: DEMO_MINE_ID }),
+      req.userClient.rpc('get_obligations', { p_mine_id: DEMO_MINE_ID }),
+      req.userClient.rpc('get_capas', { p_mine_id: DEMO_MINE_ID }),
+      req.userClient.rpc('get_incidents', { p_mine_id: DEMO_MINE_ID }),
+      req.userClient.rpc('get_observations', { p_mine_id: DEMO_MINE_ID }),
+      req.userClient.rpc('get_sections', { p_mine_id: DEMO_MINE_ID }),
+      req.userClient.rpc('get_risk_score', { p_mine_id: DEMO_MINE_ID }),
     ]);
 
     const dashboard = dashboardResult.data;

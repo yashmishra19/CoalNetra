@@ -16,9 +16,11 @@ export default function Login() {
   // If already logged in, redirect
   useEffect(() => {
     if (!authLoading && user) {
-      if (user.role === 'mine_manager') navigate('/', { replace: true });
-      else if (user.role === 'regulator') navigate('/regulator', { replace: true });
-      else if (user.role === 'both') navigate('/select-role', { replace: true });
+      const role = (user.role || '').toLowerCase();
+      if (role === 'mine_manager') navigate('/', { replace: true });
+      else if (role === 'regulator') navigate('/regulator', { replace: true });
+      else if (role === 'field_officer') navigate('/today', { replace: true });
+      else if (role === 'both') navigate('/select-role', { replace: true });
     }
   }, [user, authLoading, navigate]);
 
@@ -28,9 +30,12 @@ export default function Login() {
     setSubmitting(false);
 
     if (result) {
-      if (result.role === 'mine_manager') navigate('/', { replace: true });
-      else if (result.role === 'regulator') navigate('/regulator', { replace: true });
-      else if (result.role === 'both') navigate('/select-role', { replace: true });
+      const role = (result.role || '').toLowerCase();
+      if (role === 'mine_manager') navigate('/', { replace: true });
+      else if (role === 'regulator') navigate('/regulator', { replace: true });
+      else if (role === 'field_officer') navigate('/today', { replace: true });
+      else if (role === 'both') navigate('/select-role', { replace: true });
+      else navigate('/', { replace: true });
     }
   };
 
@@ -154,26 +159,13 @@ export default function Login() {
             <span className="flex-1 h-px bg-page-border" />
           </div>
 
-          {/* Quick Access Buttons */}
-          <div className="mt-6 text-center">
-            <p className="text-[13px] text-status-neutral mb-3">Quick demo access</p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                onClick={() => handleQuickAccess('mahato@coalgov.in', 'mine123')}
-                className="flex-1 border border-page-border rounded-lg py-3 text-[14px] font-medium text-brand-primary hover:bg-page-bg transition cursor-pointer flex flex-col items-center gap-1.5"
-              >
-                <HardHat size={22} className="text-status-warning" />
-                <span>Mine Manager</span>
-                <span className="text-[12px] text-status-neutral">R. Mahato</span>
-              </button>
-              <button
-                onClick={() => handleQuickAccess('kulkarni@dgms.gov.in', 'dgms123')}
-                className="flex-1 border border-page-border rounded-lg py-3 text-[14px] font-medium text-brand-primary hover:bg-page-bg transition cursor-pointer flex flex-col items-center gap-1.5"
-              >
-                <Shield size={22} className="text-status-info" />
-                <span>DGMS Regulator</span>
-                <span className="text-[12px] text-status-neutral">P.B. Kulkarni</span>
-              </button>
+          {/* Quick Access Hint */}
+          <div className="mt-6 p-4 bg-page-bg border border-page-border rounded-lg">
+            <p className="text-[12px] text-status-neutral text-center mb-2">Demo accounts available</p>
+            <div className="flex flex-col gap-1">
+              <p className="text-[12px] text-status-neutral"><HardHat size={12} className="inline mr-1 text-status-warning" />Mine Manager: minemanager@koylanetra.test</p>
+              <p className="text-[12px] text-status-neutral"><Shield size={12} className="inline mr-1 text-status-info" />Regulator: regulator@koylanetra.test</p>
+              <p className="text-[12px] text-status-neutral"><HardHat size={12} className="inline mr-1 text-status-critical" />Field Officer: fieldofficer@koylanetra.test</p>
             </div>
           </div>
         </div>
