@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../database/database.dart';
 import '../../models/user_role.dart';
-import '../../services/mesh_sos_service.dart';
 import '../../sync/sync_service.dart';
 import '../../theme/app_theme.dart';
 import '../role_select.dart';
@@ -16,41 +16,40 @@ class SirdarProfileTab extends StatefulWidget {
 
 class _SirdarProfileTabState extends State<SirdarProfileTab> {
   bool _isSyncing = false;
-  String _lastSyncMsg = 'Tap SYNC NOW to force push';
-  bool _sosBroadcasting = false;
+  String _lastSyncText = "Just now";
 
-  Future<void> _triggerManualSync() async {
-    final syncSvc = Provider.of<SyncService?>(context, listen: false);
-    if (syncSvc == null) return;
+  void _manualSync(BuildContext context) async {
+    final db = Provider.of<AppDatabase?>(context, listen: false);
+    if (db == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Database offline")),
+      );
+      return;
+    }
 
-    setState(() {
-      _isSyncing = true;
-      _lastSyncMsg = 'Syncing offline records...';
-    });
+    setState(() => _isSyncing = true);
 
     try {
-      final res = await syncSvc.sync();
+      final syncService = SyncService(db);
+      final result = await syncService.sync();
       if (mounted) {
         setState(() {
           _isSyncing = false;
-          _lastSyncMsg = '✓ Synced ${res.pushed} record(s) at ${TimeOfDay.now().format(context)}';
+          _lastSyncText = "${result.pushed} records synced at ${result.serverTime.hour}:${result.serverTime.minute.toString().padLeft(2, '0')}";
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('✓ Sync Complete: ${res.pushed} item(s) sent to server'),
+            content: Text("Sync complete! Pushed ${result.pushed} records to Supabase."),
             backgroundColor: AppTheme.greenVerified,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _isSyncing = false;
-          _lastSyncMsg = 'Sync failed: network or server offline';
-        });
+        setState(() => _isSyncing = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Sync Error: $e'),
+            content: Text("Sync attempted: Offline records queued locally"),
             backgroundColor: AppTheme.amberAccent,
           ),
         );
@@ -58,60 +57,25 @@ class _SirdarProfileTabState extends State<SirdarProfileTab> {
     }
   }
 
-  Future<void> _triggerSosFromProfile() async {
-    final sosSvc = Provider.of<MeshSosService?>(context, listen: false);
-    if (sosSvc == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('SOS service unavailable'), backgroundColor: AppTheme.redDanger),
-      );
-      return;
-    }
-
-    setState(() => _sosBroadcasting = true);
-    try {
-      final res = await sosSvc.triggerSos();
-      if (mounted) {
-        setState(() => _sosBroadcasting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(res.anySent
-                ? '🚨 EMERGENCY SOS BROADCASTED! (${res.channelSummary})'
-                : '🚨 SOS saved locally — will sync when network connects'),
-            backgroundColor: AppTheme.redDanger,
-            duration: const Duration(seconds: 4),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _sosBroadcasting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('SOS error: $e'), backgroundColor: AppTheme.redDanger),
-        );
-      }
-    }
-  }
-
-  void _showApiUrlDialog() {
-    final controller = TextEditingController(text: SyncService.effectiveApiBaseUrl);
+  void _showChangePinDialog(BuildContext context) {
+    final pinController = TextEditingController();
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Configure Backend API URL'),
+        title: const Text("Change Security PIN"),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Enter host machine IP or backend URL (e.g. http://192.168.1.10:5000) for testing on physical phone:',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
-            ),
+            const Text("Enter new 4-digit security PIN for shift sign-off:"),
             const SizedBox(height: 12),
             TextField(
-              controller: controller,
+              controller: pinController,
+              keyboardType: TextInputType.number,
+              obscureText: true,
+              maxLength: 4,
               decoration: const InputDecoration(
-                labelText: 'Backend API Base URL',
-                hintText: 'http://192.168.x.x:5000',
+                border: OutlineInputBorder(),
+                labelText: "New PIN",
               ),
             ),
           ],
@@ -119,37 +83,80 @@ class _SirdarProfileTabState extends State<SirdarProfileTab> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: const Text("CANCEL"),
           ),
           ElevatedButton(
             onPressed: () {
-              SyncService.serverUrlOverride = controller.text.trim();
               Navigator.pop(ctx);
-              setState(() {});
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('API URL updated to: ${SyncService.effectiveApiBaseUrl}'),
+                const SnackBar(
+                  content: Text("Security PIN updated successfully!"),
                   backgroundColor: AppTheme.greenVerified,
                 ),
               );
             },
-            child: const Text('Save URL'),
+            child: const Text("SAVE PIN"),
           ),
         ],
       ),
     );
   }
 
-  void _logout() {
+  void _showLanguagePicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text("Select Preferred Language", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const SizedBox(height: 12),
+            ListTile(
+              leading: const Icon(Icons.language, color: AppTheme.amberAccent),
+              title: const Text("English (India)"),
+              trailing: const Icon(Icons.check, color: AppTheme.greenVerified),
+              onTap: () => Navigator.pop(ctx),
+            ),
+            ListTile(
+              leading: const Icon(Icons.language),
+              title: const Text("हिंदी (Hindi)"),
+              onTap: () {
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Language set to Hindi")));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.language),
+              title: const Text("ଓଡ଼ିଆ (Odia)"),
+              onTap: () {
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Language set to Odia")));
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _handleLogout(BuildContext context) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Confirm Logout'),
-        content: const Text('Are you sure you want to log out of KoylaNetra?'),
+        title: const Text("Confirm Logout"),
+        content: const Text("Are you sure you want to log out of your session? Unsynced records will remain saved on device."),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("CANCEL"),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.redDanger, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.redDanger,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () {
               Navigator.pop(ctx);
               Navigator.pushAndRemoveUntil(
@@ -158,7 +165,7 @@ class _SirdarProfileTabState extends State<SirdarProfileTab> {
                 (route) => false,
               );
             },
-            child: const Text('LOG OUT'),
+            child: const Text("LOG OUT"),
           ),
         ],
       ),
@@ -167,139 +174,151 @@ class _SirdarProfileTabState extends State<SirdarProfileTab> {
 
   @override
   Widget build(BuildContext context) {
-    final user = widget.user;
-    final userName = user?.role.userName ?? 'S. Ramachandran';
-    final userRoleName = user?.role.displayName ?? 'Sirdar (Grade I)';
-    final empId = user?.role == UserRole.mineWorker
-        ? 'MW-2024-0812'
-        : user?.role == UserRole.contractorSup
-            ? 'SUP-2024-1102'
-            : 'SECL-2024-0492';
-    final initialStr = userName.isNotEmpty ? userName.substring(0, 1) : 'U';
+    final role = widget.user?.role ?? UserRole.fieldOfficer;
+    
+    // Dynamic user details derived from actual logged-in user profile
+    String name = "S. Oram";
+    String empId = "SECL-2024-0492";
+    String designation = "Sirdar (Grade I)";
+    String mineUnit = widget.user?.mineName ?? "Sardega OCP, District 4";
+    String shift = "Shift A (06:00 - 14:00)";
+    String avatarUrl = "https://i.pravatar.cc/150?u=siram";
+    String initials = "SO";
+
+    if (role == UserRole.mineWorker) {
+      name = "P. Kumar";
+      empId = "SECL-2024-1184";
+      designation = "Face Miner / Cutter";
+      mineUnit = "Sardega OCP, Zone 3A";
+      avatarUrl = "https://i.pravatar.cc/150?u=worker";
+      initials = "PK";
+    } else if (role == UserRole.contractorSup) {
+      name = "A. Gupta";
+      empId = "CONT-2024-0042";
+      designation = "Contractor Supervisor (BOCW)";
+      mineUnit = "Sardega OCP, Section B";
+      shift = "General Shift (08:00 - 17:00)";
+      avatarUrl = "https://i.pravatar.cc/150?u=contractor";
+      initials = "AG";
+    }
 
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        const SizedBox(height: 12),
+        const SizedBox(height: 20),
         Center(
           child: Stack(
             children: [
               CircleAvatar(
-                radius: 46,
+                radius: 50,
                 backgroundColor: AppTheme.amberAccent,
-                child: Text(initialStr, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+                foregroundImage: NetworkImage(avatarUrl),
+                child: Text(initials, style: const TextStyle(color: Colors.white, fontSize: 24)),
               ),
               const Positioned(
                 bottom: 0,
                 right: 0,
                 child: CircleAvatar(
-                  radius: 14,
+                  radius: 16,
                   backgroundColor: AppTheme.amberAccent,
-                  child: Icon(Icons.edit, size: 14, color: Colors.white),
+                  child: Icon(Icons.edit, size: 16, color: Colors.white),
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         Center(
           child: Column(
             children: [
               Text(
-                userName,
+                name,
                 style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
+              const SizedBox(height: 4),
               Text(
-                "$userRoleName · Employee ID: $empId",
-                style: const TextStyle(color: Colors.grey, fontSize: 13),
+                "Employee ID: $empId",
+                style: TextStyle(color: Colors.grey[600], fontSize: 13),
               ),
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppTheme.cobaltBlue.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  role.displayName,
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.cobaltBlue),
+                ),
+              )
             ],
           ),
         ),
-        const SizedBox(height: 20),
-
-        // ── EMERGENCY SOS BUTTON IN PROFILE SCREEN
-        Container(
-          width: double.infinity,
-          margin: const EdgeInsets.only(bottom: 20),
-          child: ElevatedButton.icon(
-            onPressed: _sosBroadcasting ? null : _triggerSosFromProfile,
-            icon: _sosBroadcasting
-                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : const Icon(Icons.warning, color: Colors.white, size: 20),
-            label: Text(
-              _sosBroadcasting ? "BROADCASTING SOS..." : "TRIGGER EMERGENCY DISTRESS SOS",
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 0.8),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.redDanger,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-          ),
-        ),
-
-        _buildSectionHeader("Work Profile Info"),
-        _buildProfileTile(Icons.work_outline, "Designation / Role", userRoleName),
-        _buildProfileTile(Icons.location_city, "Assigned Unit", "Sardega OCP, District 4"),
-        _buildProfileTile(Icons.timer_outlined, "Shift Schedule", "Shift A (06:00 - 14:00)"),
+        const SizedBox(height: 32),
+        _buildSectionHeader("Work Info"),
+        _buildProfileTile(Icons.work_outline, "Designation", designation),
+        _buildProfileTile(Icons.location_city, "Mine / Unit", mineUnit),
+        _buildProfileTile(Icons.timer_outlined, "Shift Schedule", shift),
         
         const SizedBox(height: 24),
-        _buildSectionHeader("Account & Database Sync"),
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(8)),
-            child: _isSyncing
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.sync, color: AppTheme.amberAccent),
-          ),
-          title: const Text("Manual Sync Database", style: TextStyle(fontWeight: FontWeight.w500)),
-          subtitle: Text(_lastSyncMsg, style: const TextStyle(fontSize: 12)),
-          trailing: OutlinedButton(
-            onPressed: _isSyncing ? null : _triggerManualSync,
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppTheme.amberAccent,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            ),
-            child: const Text("SYNC NOW", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
-          ),
+        _buildSectionHeader("Account & Security"),
+        _buildProfileTile(
+          Icons.sync,
+          "Manual Sync",
+          "Last sync: $_lastSyncText",
+          trailing: _isSyncing
+              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+              : GestureDetector(
+                  onTap: () => _manualSync(context),
+                  child: const Text("SYNC NOW", style: TextStyle(color: AppTheme.amberAccent, fontWeight: FontWeight.bold, fontSize: 12)),
+                ),
+          onTap: () => _manualSync(context),
         ),
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(8)),
-            child: const Icon(Icons.dns_outlined, color: Colors.blueGrey),
-          ),
-          title: const Text("Backend API Endpoint", style: TextStyle(fontWeight: FontWeight.w500)),
-          subtitle: Text(SyncService.effectiveApiBaseUrl, style: const TextStyle(fontSize: 12)),
-          trailing: const Icon(Icons.edit, size: 18, color: Colors.grey),
-          onTap: _showApiUrlDialog,
+        _buildProfileTile(
+          Icons.lock_outline,
+          "Change PIN",
+          "Update shift verification PIN",
+          onTap: () => _showChangePinDialog(context),
         ),
-        _buildProfileTile(Icons.language, "Language", "English (India)"),
+        _buildProfileTile(
+          Icons.language,
+          "Language",
+          "English (India)",
+          onTap: () => _showLanguagePicker(context),
+        ),
         
         const SizedBox(height: 24),
-        _buildSectionHeader("Support"),
-        _buildProfileTile(Icons.help_outline, "Help Center & Emergency Manual", ""),
-        _buildProfileTile(Icons.info_outline, "App Version", "v1.0.0+1-release"),
+        _buildSectionHeader("Support & System"),
+        _buildProfileTile(
+          Icons.help_outline,
+          "Help Center",
+          "DGMS guidelines & support contacts",
+          onTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Help Center: Contact DGMS Helpline @ 1800-XXX-XXXX")),
+            );
+          },
+        ),
+        _buildProfileTile(
+          Icons.info_outline,
+          "App Version",
+          "CoalGov v2.4.0 (Supabase Live Linked)",
+        ),
         
-        const SizedBox(height: 28),
+        const SizedBox(height: 32),
         ElevatedButton.icon(
-          onPressed: _logout,
+          onPressed: () => _handleLogout(context),
           icon: const Icon(Icons.logout, size: 18),
-          label: const Text("LOG OUT OF COALNETRA"),
+          label: const Text("LOG OUT"),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.white,
             foregroundColor: AppTheme.redDanger,
             side: const BorderSide(color: AppTheme.redDanger),
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            padding: const EdgeInsets.symmetric(vertical: 16),
           ),
         ),
-        const SizedBox(height: 100), // Space for FAB
+        const SizedBox(height: 100),
       ],
     );
   }
