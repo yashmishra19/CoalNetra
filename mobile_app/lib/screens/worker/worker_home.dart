@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import '../../models/user_role.dart';
 import '../../theme/app_theme.dart';
-import '../shared/grievances_tab.dart';
 import '../shared/observations_tab.dart';
-import 'worker_home_tab.dart';
+import '../shared/grievances_tab.dart';
+
+import '../shared/compliance_alerts_tab.dart';
+import '../shared/documents_tab.dart';
+import '../shared/sos_beacon_screen.dart';
 import '../sirdar/sirdar_profile_tab.dart';
+import 'worker_home_tab.dart';
 
 class WorkerHome extends StatefulWidget {
   final MockUser user;
@@ -17,11 +21,14 @@ class WorkerHome extends StatefulWidget {
 class _WorkerHomeState extends State<WorkerHome> {
   int _selectedIndex = 0;
 
-  final List<Widget> _tabs = const [
-    WorkerHomeTab(),
-    ObservationsTab(),
-    GrievancesTab(),
-    SirdarProfileTab(), // Reusing profile tab UI
+  // Worker sees: Home, Safety Observations, Documents (own certs), Alerts, Grievance, Profile
+  List<Widget> get _tabs => [
+    const WorkerHomeTab(),
+    const ObservationsTab(),
+    const DocumentsTab(),      // worker's own certificates / training records
+    const ComplianceAlertsTab(), // predictive alerts that affect the worker
+    const GrievancesTab(),
+    SirdarProfileTab(user: widget.user),
   ];
 
   @override
@@ -41,8 +48,10 @@ class _WorkerHomeState extends State<WorkerHome> {
                     const CircleAvatar(
                       radius: 20,
                       backgroundColor: AppTheme.amberAccent,
-                      foregroundImage: NetworkImage("https://i.pravatar.cc/150?u=worker"),
-                      child: Text("RW", style: TextStyle(color: Colors.white)),
+                      foregroundImage: NetworkImage(
+                          "https://i.pravatar.cc/150?u=worker"),
+                      child:
+                          Text("RW", style: TextStyle(color: Colors.white)),
                     ),
                     const SizedBox(width: 12),
                     Column(
@@ -65,9 +74,60 @@ class _WorkerHomeState extends State<WorkerHome> {
                       ],
                     ),
                     const Spacer(),
-                    IconButton(
-                      icon: Icon(Icons.notifications_none, color: Colors.blueGrey[300]),
-                      onPressed: () {},
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => SOSBeaconScreen(
+                              userName: widget.user.role.userName,
+                              role: widget.user.role.displayName,
+                            ),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppTheme.redDanger,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(color: AppTheme.redDanger.withOpacity(0.4), blurRadius: 6),
+                          ],
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.sensors, color: Colors.white, size: 14),
+                            SizedBox(width: 4),
+                            Text(
+                              "SOS",
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Stack(
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.notifications_none,
+                              color: Colors.blueGrey[300]),
+                          onPressed: () => _showWorkerAlerts(context),
+                        ),
+                        Positioned(
+                          right: 8,
+                          top: 8,
+                          child: Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: AppTheme.redDanger,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -83,9 +143,7 @@ class _WorkerHomeState extends State<WorkerHome> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          setState(() => _selectedIndex = 2); // Quick jump to Grievances
-        },
+        onPressed: () => setState(() => _selectedIndex = 4), // Quick jump to Grievances
         backgroundColor: AppTheme.amberAccent,
         shape: const CircleBorder(),
         child: const Icon(Icons.chat_bubble_outline, color: Colors.white),
@@ -100,11 +158,11 @@ class _WorkerHomeState extends State<WorkerHome> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(0, Icons.home_outlined, "Home"),
-              _buildNavItem(1, Icons.assignment_outlined, "Safety"),
+              _buildNavItem(0, Icons.home_outlined, 'Home'),
+              _buildNavItem(1, Icons.assignment_outlined, 'Safety'),
               const SizedBox(width: 40),
-              _buildNavItem(2, Icons.report_problem_outlined, "Grievance"),
-              _buildNavItem(3, Icons.person_outline, "Profile"),
+              _buildNavItem(3, Icons.bolt_outlined, 'Alerts'),
+              _buildNavItem(5, Icons.person_outline, 'Profile'),
             ],
           ),
         ),
@@ -119,20 +177,57 @@ class _WorkerHomeState extends State<WorkerHome> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            color: isSelected ? AppTheme.amberAccent : Colors.grey,
-          ),
+          Icon(icon,
+              color: isSelected ? AppTheme.amberAccent : Colors.grey),
           Text(
             label,
             style: TextStyle(
               fontSize: 10,
               color: isSelected ? AppTheme.amberAccent : Colors.grey,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              fontWeight:
+                  isSelected ? FontWeight.bold : FontWeight.normal,
             ),
           ),
         ],
       ),
+    );
+  }
+
+  void _showWorkerAlerts(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Your Alerts',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const SizedBox(height: 12),
+            _alertTile(Icons.medical_information,
+                'Medical fitness cert. expires in 30 days', Colors.orange),
+            _alertTile(Icons.engineering,
+                'Safety training refresher due: 30 Sep', AppTheme.amberAccent),
+            _alertTile(Icons.warning,
+                'Gas alert in Face 3A – extra care on entry', AppTheme.redDanger),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _alertTile(IconData icon, String text, Color color) {
+    return ListTile(
+      dense: true,
+      leading: Icon(icon, color: color, size: 20),
+      title: Text(text, style: const TextStyle(fontSize: 12)),
     );
   }
 }

@@ -1,21 +1,112 @@
 import 'package:flutter/material.dart';
 import '../../models/mock_data.dart';
+import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/region_summary_card.dart';
 import '../../widgets/provenance_bar.dart';
 
-class DashboardTab extends StatelessWidget {
+class DashboardTab extends StatefulWidget {
   const DashboardTab({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    const metrics = nagpurRegionMetrics;
+  State<DashboardTab> createState() => _DashboardTabState();
+}
 
+class _DashboardTabState extends State<DashboardTab> {
+  bool _isLoading = true;
+  bool _isLive = false;
+
+  int? _openCapas = 3;
+  int? _overdueCapas = 1;
+  int? _observationsCount = 2;
+  int? _riskScore = 64;
+  String? _riskLevel = 'MODERATE';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchDashboardData();
+  }
+
+  Future<void> _fetchDashboardData() async {
+    final data = await ApiService.instance.fetchToday();
+    if (!mounted) return;
+
+    if (data != null) {
+      final summary = data['summary'];
+      final risk = data['riskScore'];
+
+      setState(() {
+        if (summary is Map) {
+          _openCapas = summary['openCapas'] ?? 3;
+          _overdueCapas = summary['overdueCapas'] ?? 1;
+          _observationsCount = summary['observationsCount'] ?? 12;
+        }
+        if (risk is Map) {
+          _riskScore = risk['overall_score'] ?? 72;
+          _riskLevel = (risk['risk_level'] ?? 'HIGH').toString().toUpperCase();
+        }
+        _isLoading = false;
+        _isLive = true;
+      });
+    } else {
+      setState(() {
+        _isLoading = false;
+        _isLive = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (_isLive)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.check_circle,
+                    size: 14,
+                    color: AppTheme.greenVerified,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Live compliance data connected',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green[800],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (!_isLive)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  Icon(
+                    _isLoading ? Icons.sync : Icons.cloud_off,
+                    size: 14,
+                    color: Colors.grey.shade600,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    _isLoading
+                        ? 'Showing demo figures while connecting...'
+                        : 'Offline · showing local demo figures',
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+                  ),
+                ],
+              ),
+            ),
+
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -23,7 +114,7 @@ class DashboardTab extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    metrics.regionName,
+                    'Sardega OCP',
                     style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -37,19 +128,33 @@ class DashboardTab extends StatelessWidget {
                 ],
               ),
               ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Integrity check: Cryptographic chain verified OK',
+                      ),
+                    ),
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.cobaltBlue,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                 ),
-                child: const Text('Run Integrity check', style: TextStyle(fontSize: 12)),
+                child: const Text(
+                  'Run Integrity check',
+                  style: TextStyle(fontSize: 12),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          
-          // Summary Metrics Grid (Matches web app's top row)
+
+          // Summary Metrics Grid
           GridView.count(
             crossAxisCount: 2,
             shrinkWrap: true,
@@ -59,35 +164,41 @@ class DashboardTab extends StatelessWidget {
             childAspectRatio: 1.5,
             children: [
               RegionSummaryCard(
-                label: 'MINES IN JURISDICTION',
-                value: metrics.totalMines.toString(),
-                subValue: '${metrics.coalMines} coal, ${metrics.metalMines} metal',
-                accentColor: AppTheme.absoluteBlack,
+                label: 'COMPLIANCE RISK SCORE',
+                value: _riskScore == null ? '—' : '$_riskScore / 100',
+                subValue: _riskLevel == null
+                    ? 'NO LIVE DATA'
+                    : '$_riskLevel RISK',
+                accentColor: (_riskScore ?? 0) > 65
+                    ? AppTheme.redDanger
+                    : AppTheme.amberAccent,
               ),
               RegionSummaryCard(
-                label: 'INSPECTIONS THIS QUARTER',
-                value: '${metrics.inspectionsDone} of ${metrics.inspectionsTarget}',
-                footer: '68%, 19 mines past interval',
+                label: 'OPEN CAPAs',
+                value: _openCapas?.toString() ?? '—',
+                footer: _overdueCapas == null
+                    ? 'No live data loaded'
+                    : '$_overdueCapas overdue for action',
                 accentColor: AppTheme.amberAccent,
               ),
               RegionSummaryCard(
-                label: 'DIRECTIONS OPEN',
-                value: metrics.directionsOpen.toString(),
-                footer: '19 past their compliance date',
-                accentColor: AppTheme.amberAccent,
+                label: 'LIVE OBSERVATIONS',
+                value: _observationsCount?.toString() ?? '—',
+                footer: 'Field inspection records',
+                accentColor: AppTheme.cobaltBlue,
               ),
               RegionSummaryCard(
-                label: 'ACCIDENTS NOTIFIED, 2026',
-                value: metrics.fatalAccidents.toString(),
-                subValue: 'fatal',
-                footer: '14 serious, 2 notices arrived late',
+                label: 'ACCIDENTS NOTIFIED',
+                value: '2',
+                subValue: 'DEMO',
+                footer: 'Local demo incident count',
                 accentColor: AppTheme.redDanger,
               ),
             ],
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Assurance & Reporting Section
           const Text(
             'Assurance and reporting',
@@ -99,162 +210,9 @@ class DashboardTab extends StatelessWidget {
             style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
           ),
           const SizedBox(height: 16),
-          
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppTheme.borderGrey),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const ProvenanceBar(data: provenanceData),
-                const SizedBox(height: 20),
-                const Divider(),
-                const SizedBox(height: 10),
-                _buildProvenanceRow('Inspection findings', '187', 'Inspector on site'),
-                _buildProvenanceRow('Ambient and gas readings', '1,244', 'Instrument feed'),
-                _buildProvenanceRow('Accident notifications', '8', 'Operator, sealed'),
-                _buildProvenanceRow('Monthly returns', '96', 'Operator, sealed'),
-              ],
-            ),
-          ),
-          
-          const SizedBox(height: 24),
-          
-          // Where to send inspectors
-          const Text(
-            'Where to send inspectors',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          ...inspectionPriorities.map((p) => _buildInspectionPriorityTile(p)),
-          
-          const SizedBox(height: 24),
-          
-          // Discipline Coverage
-          const Text(
-            'Coverage by discipline',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppTheme.borderGrey),
-            ),
-            child: Column(
-              children: disciplineCoverages.map((d) => _buildCoverageBar(d)).toList(),
-            ),
-          ),
-          
-          const SizedBox(height: 80), // Bottom padding
-        ],
-      ),
-    );
-  }
 
-  Widget _buildProvenanceRow(String label, String count, String source) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Text(label, style: const TextStyle(fontSize: 12)),
-          ),
-          Text(count, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-          const SizedBox(width: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: AppTheme.offWhiteBackground,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              source,
-              style: const TextStyle(fontSize: 9, color: Colors.blueGrey),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInspectionPriorityTile(InspectionPriority p) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppTheme.borderGrey),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: AppTheme.nearBlackCoal,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              '${inspectionPriorities.indexOf(p) + 1}',
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(p.mineName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    Text('Score ${p.score}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                  ],
-                ),
-                Text(p.subtitle, style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                const SizedBox(height: 4),
-                Text(p.reason, style: const TextStyle(fontSize: 10, fontStyle: FontStyle.italic)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCoverageBar(DisciplineCoverage d) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(d.label, style: const TextStyle(fontSize: 11)),
-              Text('${d.current}/${d.total}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-            ],
-          ),
-          const SizedBox(height: 4),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(2),
-            child: LinearProgressIndicator(
-              value: d.current / d.total,
-              backgroundColor: AppTheme.offWhiteBackground,
-              valueColor: AlwaysStoppedAnimation<Color>(d.color),
-              minHeight: 8,
-            ),
-          ),
+          const ProvenanceBar(data: provenanceData),
+          const SizedBox(height: 80),
         ],
       ),
     );

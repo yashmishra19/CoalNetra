@@ -11,6 +11,10 @@ const DEMO_SECTION_ID = '66666666-6666-6666-6666-666666666601';
 const DEMO_FIELD_OFFICER_ID = '77777777-7777-7777-7777-777777777701';
 
 function requireAdmin(res) {
+  if (process.env.DEMO_MODE !== 'true') {
+    res.status(403).json({ error: 'Sync writes are disabled. Enable DEMO_MODE only for a trusted demo environment.' });
+    return false;
+  }
   if (!supabaseAdmin) {
     res.status(503).json({ error: 'Sync is not configured: SUPABASE_SERVICE_ROLE_KEY is missing' });
     return false;
@@ -25,8 +29,18 @@ function pointFromLocation(location) {
 
 router.post('/push', async (req, res) => {
   if (!requireAdmin(res)) return;
-  const { observations = [], grievances = [] } = req.body || {};
-  const accepted = { observations: [], grievances: [] };
+  const {
+    observations = [],
+    grievances = [],
+    obligations = [],
+    sosSignals = [],
+  } = req.body || {};
+  if (!Array.isArray(observations) || !Array.isArray(grievances) || !Array.isArray(obligations) ||
+      !Array.isArray(sosSignals) ||
+      observations.length + grievances.length + obligations.length + sosSignals.length > 100) {
+    return res.status(400).json({ error: 'Expected arrays with no more than 100 total records' });
+  }
+  const accepted = { observations: [], grievances: [], obligations: [], sosSignals: [] };
 
   try {
     for (const item of observations) {
@@ -72,10 +86,81 @@ router.post('/push', async (req, res) => {
       accepted.grievances.push(data);
     }
 
+    for (const item of obligations) {
+      const status = String(item.status || '').toUpperCase();
+      const dueDate = new Date(item.dueDate);
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(item.id || '') ||
+          !['PENDING', 'OVERDUE', 'COMPLETED', 'EXEMPTED'].includes(status) ||
+          Number.isNaN(dueDate.getTime())) {
+        return res.status(400).json({ error: 'Invalid obligation update' });
+      }
+      const { data, error } = await supabaseAdmin
+        .from('obligations')
+        .update({ status, due_date: dueDate.toISOString(), updated_at: new Date().toISOString() })
+        .eq('id', item.id)
+        .eq('mine_id', DEMO_MINE_ID)
+        .select('id')
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return res.status(404).json({ error: 'Obligation not found in demo mine' });
+      accepted.obligations.push(data);
+    }
+
+    for (const item of sosSignals) {
+      const status = String(item.status || '').toUpperCase();
+      const latitude = item.latitude == null ? null : Number(item.latitude);
+      const longitude = item.longitude == null ? null : Number(item.longitude);
+      if (typeof item.clientUuid !== 'string' || item.clientUuid.length > 80 ||
+          !['ACTIVE', 'CANCELLED'].includes(status) ||
+          (latitude != null && (!Number.isFinite(latitude) || latitude < -90 || latitude > 90)) ||
+          (longitude != null && (!Number.isFinite(longitude) || longitude < -180 || longitude > 180))) {
+        return res.status(400).json({ error: 'Invalid SOS signal' });
+      }
+      const { data, error } = await supabaseAdmin
+        .from('sos_signals')
+        .upsert({
+          client_uuid: item.clientUuid,
+          mine_id: DEMO_MINE_ID,
+          user_name: String(item.userName || 'Mine user').slice(0, 120),
+          role: String(item.role || 'Field user').slice(0, 80),
+          latitude,
+          longitude,
+          status,
+          client_created_at: item.createdAt || new Date().toISOString(),
+          updated_at: item.updatedAt || new Date().toISOString(),
+        }, { onConflict: 'client_uuid' })
+        .select('client_uuid')
+        .single();
+      if (error) throw error;
+      accepted.sosSignals.push(data);
+    }
+
     res.json({ accepted, serverTime: new Date().toISOString() });
   } catch (error) {
     console.error('Sync push error:', error);
     res.status(500).json({ error: 'Sync push failed', details: error.message });
+  }
+});
+
+router.get('/sos/active', async (req, res) => {
+  if (!requireAdmin(res)) return;
+  try {
+    const mineId = req.query.mineId || DEMO_MINE_ID;
+    if (mineId !== DEMO_MINE_ID) {
+      return res.status(403).json({ error: 'Mine is outside the demo sync scope' });
+    }
+    const { data, error } = await supabaseAdmin
+      .from('sos_signals')
+      .select('client_uuid, user_name, role, latitude, longitude, status, client_created_at, updated_at')
+      .eq('mine_id', DEMO_MINE_ID)
+      .eq('status', 'ACTIVE')
+      .order('updated_at', { ascending: false })
+      .limit(100);
+    if (error) throw error;
+    res.json({ signals: data || [], serverTime: new Date().toISOString() });
+  } catch (error) {
+    console.error('SOS pull error:', error);
+    res.status(500).json({ error: 'Could not load active SOS signals' });
   }
 });
 

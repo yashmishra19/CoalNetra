@@ -12,6 +12,7 @@ class AppTheme {
   static const Color redDanger = Color(0xFFDC2626); // Alert
   static const Color cobaltBlue = Color(0xFF2563EB); // Primary Action Blue
   static const Color borderGrey = Color(0xFFE5E7EB);
+  static const Color textMuted = Color(0xFF6B7280);
 
   static ThemeData get lightTheme {
     return ThemeData(

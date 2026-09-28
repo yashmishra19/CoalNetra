@@ -278,6 +278,22 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_ble_central:
+    dependency: "direct main"
+    description:
+      name: flutter_ble_central
+      sha256: "6b33a278abd568c7cb7b8a21532783a46e6144514d9bfc7a2c69596d7943c0b1"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.0"
+  flutter_ble_peripheral:
+    dependency: "direct main"
+    description:
+      name: flutter_ble_peripheral
+      sha256: "113b9fe5535a6166b8b7b58bdcaf352939be42916fb4584d03b58607b784690a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.1.0"
   flutter_lints:
     dependency: "direct dev"
     description:
