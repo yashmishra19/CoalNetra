@@ -20,7 +20,6 @@ app.use('/api/nav', navRouter);
 app.use('/api/regulator', regulatorRouter);
 app.use('/api/sync', syncRouter);
 app.use('/api', complianceRouter); // obligations, capas, incidents, directions, mine
-app.use('/api/sync', syncRouter);
 
 
 app.get('/api/health', (req, res) => {
