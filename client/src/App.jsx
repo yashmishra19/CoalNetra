@@ -36,7 +36,7 @@ export default function App() {
           <Route
             path="/"
             element={
-              <ProtectedRoute allowedRoles={['mine_manager', 'both']}>
+              <ProtectedRoute allowedRoles={['mine_manager', 'field_officer', 'both']}>
                 <AppProvider><Today /></AppProvider>
               </ProtectedRoute>
             }

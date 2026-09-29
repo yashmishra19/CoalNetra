@@ -13,12 +13,13 @@ export default function Login() {
   const [submitting, setSubmitting] = useState(false);
   const autoSubmitRef = useRef(null);
 
-  // If already logged in, redirect
   useEffect(() => {
     if (!authLoading && user) {
-      if (user.role === 'mine_manager') navigate('/', { replace: true });
-      else if (user.role === 'regulator') navigate('/regulator', { replace: true });
-      else if (user.role === 'both') navigate('/select-role', { replace: true });
+      const role = (user.role || '').toLowerCase();
+      if (role === 'mine_manager') navigate('/', { replace: true });
+      else if (role === 'regulator') navigate('/regulator', { replace: true });
+      else if (role === 'field_officer') navigate('/', { replace: true });
+      else if (role === 'both') navigate('/select-role', { replace: true });
     }
   }, [user, authLoading, navigate]);
 
@@ -28,9 +29,12 @@ export default function Login() {
     setSubmitting(false);
 
     if (result) {
-      if (result.role === 'mine_manager') navigate('/', { replace: true });
-      else if (result.role === 'regulator') navigate('/regulator', { replace: true });
-      else if (result.role === 'both') navigate('/select-role', { replace: true });
+      const role = (result.role || '').toLowerCase();
+      if (role === 'mine_manager') navigate('/', { replace: true });
+      else if (role === 'regulator') navigate('/regulator', { replace: true });
+      else if (role === 'field_officer') navigate('/', { replace: true });
+      else if (role === 'both') navigate('/select-role', { replace: true });
+      else navigate('/', { replace: true });
     }
   };
 
@@ -38,16 +42,12 @@ export default function Login() {
     setEmail(quickEmail);
     setPassword(quickPassword);
     clearError();
-
-    // Clear any pending auto-submit
     if (autoSubmitRef.current) clearTimeout(autoSubmitRef.current);
-
     autoSubmitRef.current = setTimeout(() => {
       handleLogin(quickEmail, quickPassword);
     }, 300);
   };
 
-  // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
       if (autoSubmitRef.current) clearTimeout(autoSubmitRef.current);
@@ -59,7 +59,6 @@ export default function Login() {
     if (error) clearError();
   };
 
-  // Show loading while checking auth state
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a]">
@@ -71,23 +70,17 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] flex items-center justify-center p-4 font-sans">
       <div className="bg-white rounded-2xl sm:rounded-2xl shadow-2xl w-full max-w-[440px] overflow-hidden">
-
-        {/* Card Header */}
         <div className="bg-[#0f172a] px-6 sm:px-8 py-8 text-center">
           <h1 className="text-3xl font-bold text-white tracking-tight">KoylaNetra</h1>
           <p className="text-[14px] text-white/60 mt-1">Coal Mine Governance Platform</p>
           <div className="w-16 h-0.5 bg-status-warning mx-auto mt-4 rounded-full" />
         </div>
 
-        {/* Card Body */}
         <div className="px-6 sm:px-8 py-8">
           <h2 className="text-lg font-semibold text-brand-primary mb-6">Sign in to your account</h2>
 
-          {/* Email Field */}
           <div>
-            <label className="text-[13px] font-medium text-status-neutral-text mb-1.5 block">
-              Email address
-            </label>
+            <label className="text-[13px] font-medium text-status-neutral-text mb-1.5 block">Email address</label>
             <input
               type="email"
               value={email}
@@ -97,11 +90,8 @@ export default function Login() {
             />
           </div>
 
-          {/* Password Field */}
           <div className="mt-4">
-            <label className="text-[13px] font-medium text-status-neutral-text mb-1.5 block">
-              Password
-            </label>
+            <label className="text-[13px] font-medium text-status-neutral-text mb-1.5 block">Password</label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
@@ -121,7 +111,6 @@ export default function Login() {
             </div>
           </div>
 
-          {/* Error Message */}
           {error && (
             <div className="mt-4 bg-status-critical-bg border border-status-critical-border rounded-lg px-4 py-3 flex items-center gap-2">
               <AlertCircle size={16} className="text-status-critical flex-shrink-0" />
@@ -129,13 +118,11 @@ export default function Login() {
             </div>
           )}
 
-          {/* Sign In Button */}
           <button
             onClick={() => handleLogin()}
             disabled={submitting}
-            className={`mt-6 w-full bg-brand-primary text-white font-semibold rounded-lg py-3.5 text-[15px] hover:bg-brand-dark active:scale-[0.98] transition-all cursor-pointer ${
-              submitting ? 'opacity-60 cursor-not-allowed' : ''
-            }`}
+            className={`mt-6 w-full bg-brand-primary text-white font-semibold rounded-lg py-3.5 text-[15px] hover:bg-brand-dark active:scale-[0.98] transition-all cursor-pointer ${submitting ? 'opacity-60 cursor-not-allowed' : ''
+              }`}
           >
             {submitting ? (
               <span className="flex items-center justify-center gap-2">
@@ -147,38 +134,39 @@ export default function Login() {
             )}
           </button>
 
-          {/* Divider */}
           <div className="mt-6 flex items-center gap-4">
             <span className="flex-1 h-px bg-page-border" />
             <span className="text-[13px] text-status-neutral">or</span>
             <span className="flex-1 h-px bg-page-border" />
           </div>
 
-          {/* Quick Access Buttons */}
-          <div className="mt-6 text-center">
-            <p className="text-[13px] text-status-neutral mb-3">Quick demo access</p>
-            <div className="flex flex-col sm:flex-row gap-3">
+          <div className="mt-6 p-4 bg-page-bg border border-page-border rounded-lg">
+            <p className="text-[12px] text-status-neutral text-center mb-3">Demo accounts — click to sign in</p>
+            <div className="flex flex-col gap-2">
               <button
+                type="button"
                 onClick={() => handleQuickAccess('mahato@coalgov.in', 'mine123')}
-                className="flex-1 border border-page-border rounded-lg py-3 text-[14px] font-medium text-brand-primary hover:bg-page-bg transition cursor-pointer flex flex-col items-center gap-1.5"
+                disabled={submitting}
+                className="flex items-center gap-2 text-left text-[13px] text-brand-primary bg-white border border-page-border rounded-lg px-3 py-2 hover:border-status-warning hover:bg-status-warning/5 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <HardHat size={22} className="text-status-warning" />
-                <span>Mine Manager</span>
-                <span className="text-[12px] text-status-neutral">R. Mahato</span>
+                <HardHat size={14} className="text-status-warning flex-shrink-0" />
+                <span className="font-medium">Mine Manager</span>
+                <span className="text-status-neutral text-[12px] ml-auto">R. Mahato</span>
               </button>
               <button
+                type="button"
                 onClick={() => handleQuickAccess('kulkarni@dgms.gov.in', 'dgms123')}
-                className="flex-1 border border-page-border rounded-lg py-3 text-[14px] font-medium text-brand-primary hover:bg-page-bg transition cursor-pointer flex flex-col items-center gap-1.5"
+                disabled={submitting}
+                className="flex items-center gap-2 text-left text-[13px] text-brand-primary bg-white border border-page-border rounded-lg px-3 py-2 hover:border-status-info hover:bg-status-info/5 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Shield size={22} className="text-status-info" />
-                <span>DGMS Regulator</span>
-                <span className="text-[12px] text-status-neutral">P.B. Kulkarni</span>
+                <Shield size={14} className="text-status-info flex-shrink-0" />
+                <span className="font-medium">DGMS Regulator</span>
+                <span className="text-status-neutral text-[12px] ml-auto">P.B. Kulkarni</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* Card Footer */}
         <div className="px-6 sm:px-8 py-4 bg-page-bg border-t border-page-border text-center">
           <p className="text-[11px] text-status-neutral">Government of India · Ministry of Labour and Employment</p>
           <p className="text-[11px] text-status-neutral mt-0.5">Directorate General of Mines Safety</p>
