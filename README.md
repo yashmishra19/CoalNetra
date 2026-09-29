@@ -13,7 +13,7 @@ CoalNetra replaces paper statutory registers and scattered spreadsheets with one
 
 > **Evaluators & Invigilators**: You can directly download and install the compiled CoalNetra Android application onto any Android device:
 > 
-> 📥 **[Download CoalNetra Android APK (v1.0.0)](https://github.com/yashmishra19/CoalNetra/raw/main/apk/CoalNetra.apk)**
+> 📥 **[Download CoalNetra Android APK (v1.0.1)](https://github.com/yashmishra19/CoalNetra/raw/main/apk/CoalNetra.apk)**
 > 
 > * **Direct Repository Path**: [`apk/CoalNetra.apk`](./apk/CoalNetra.apk)
 > * **Installation & Feature Guide**: [`apk/README.md`](./apk/README.md)

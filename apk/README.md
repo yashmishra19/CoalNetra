@@ -6,8 +6,8 @@ This directory contains the production-ready standalone Android APK for CoalNetr
 
 ## 📥 Direct Download & Installation
 
-- **Download APK File**: [`CoalNetra.apk`](./CoalNetra.apk)
-- **Direct GitHub Raw Download Link**: [Download CoalNetra.apk](https://github.com/yashmishra19/CoalNetra/raw/main/apk/CoalNetra.apk)
+- **Download APK File**: [`CoalNetra.apk (v1.0.1)`](./CoalNetra.apk)
+- **Direct GitHub Raw Download Link**: [Download CoalNetra.apk (v1.0.1)](https://github.com/yashmishra19/CoalNetra/raw/main/apk/CoalNetra.apk)
 
 ### Installation Steps on Android:
 1. Tap the download link above on your Android smartphone (or download to PC and transfer via USB/WhatsApp/Drive).
