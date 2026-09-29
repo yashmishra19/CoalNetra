@@ -3,19 +3,23 @@
   "services": {
     "client": {
       "root": "client",
-      "framework": "vite",
-      "buildCommand": "npm run build",
-      "outputDirectory": "dist"
-    },
-    "server": {
-      "root": "server",
-      "runtime": "nodejs22.x",
-      "entrypoint": "src/index.js"
+      "framework": "vite"
     },
     "mine-compliance": {
       "root": "mine-compliance",
-      "runtime": "python3.12",
-      "entrypoint": "main.py"
+      "framework": "fastapi"
+    },
+    "server": {
+      "root": "server",
+      "framework": "express",
+      "bindings": [
+        {
+          "type": "service",
+          "service": "mine-compliance",
+          "format": "url",
+          "env": "MINE_COMPLIANCE_URL"
+        }
+      ]
     }
   },
   "rewrites": [
