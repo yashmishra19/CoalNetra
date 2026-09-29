@@ -1,211 +1,249 @@
-# KoylaNetra — Backend Architecture & Statutory Compliance Engine
+# CoalNetra
 
-KoylaNetra is a statutory governance, mine safety, and compliance platform for Indian coal mines built on **Supabase (Postgres 17 + PostGIS)**. It replaces physical statutory registers and manual reporting under the **Coal Mines Regulations (CMR) 2017** and the **Occupational Safety, Health and Working Conditions (OSHWC) Code 2020**.
+**AI-based smart governance and compliance monitoring for Indian coal mines**
+
+> Smart India Hackathon 2026 · Problem Statement 6024 · Ministry of Coal / Coal India Limited
+> Team **Blaze Squad**
+
+CoalNetra replaces paper statutory registers and scattered spreadsheets with one connected system. It reads regulatory PDFs and turns them into trackable obligations. Field staff can log geo-tagged evidence from their phones, even underground with no network. Mine managers and DGMS regulators each get a live dashboard that only shows the data their role is allowed to see.
 
 ---
 
-## 1. System Architecture & Three Role Boundaries
+## The problem
+
+A single working coal mine answers to several regulators at once: DGMS for safety, MoEFCC and CPCB for environment and pollution, the Ministry of Coal for production, and the labour authorities for workers. Their rules arrive as long PDFs. Proof of compliance usually lives in paper registers, spreadsheets and delayed reports. That makes records inconsistent, lets compliance gaps go unnoticed, and slows decisions.
+
+## What CoalNetra does
+
+- **AI obligation extraction.** Upload a clearance or regulation PDF and an LLM pulls out each obligation, deadline, penalty and source section as structured data. It can run on a local Ollama model or on the NVIDIA API.
+- **Statutory compliance tracking.** Obligations under the Coal Mines Regulations 2017 and the OSHWC Code 2020 become live tasks with due dates and status.
+- **Inspections, observations and CAPAs.** Observations are geo-tagged and time-stamped. Each one leads to a corrective and preventive action (CAPA), and the person who closes a CAPA cannot be the one who verifies it (maker-checker). Overdue items escalate automatically.
+- **Offline-first mobile app.** Records are saved to on-device SQLite and sync when the phone reconnects. Retries never create duplicate records.
+- **Underground presence.** GPS doesn't reach underground workings, so presence at a survey station is proven by scanning QR or NFC tags placed there.
+- **SOS beacon.** A worker can raise an SOS that carries their last GPS fix. It reaches nearby phones over the local network and the server over the API.
+- **Risk scoring and dashboards.** Each mine gets a risk score with a component breakdown, plus a risk map, workforce view, production and environment view, and reports and approvals.
+- **Regulator portal.** DGMS officers get a mines register, inspections, directions, accidents, permissions and an assurance view, limited to their geographic region.
+- **Tamper-evident audit trail.** An append-only SHA-256 hash chain records who did what and when.
+
+---
+
+## Architecture
 
 ```mermaid
-flowchart TD
-    subgraph Roles["User Roles & Trust Boundaries"]
-        FO["👷 Field Officer\n(Mobile / Offline-First / Underground)"]
-        MM["🏢 Mine Manager\n(Single Mine Scope / Statutory Liability)"]
-        REG["⚖️ DGMS Regulator\n(Geographic Regional Jurisdiction)"]
+flowchart LR
+    subgraph Field["Field (often offline)"]
+        APP["Flutter mobile app<br/>Sirdar · Worker · Contractor"]
+        DB[("On-device SQLite<br/>Drift")]
+        APP <--> DB
     end
 
-    subgraph Hierarchy["Hierarchy & Spatial Boundary"]
-        REGN["DGMS Region"] --> DIST["District"]
-        SUB["Subsidiary (e.g. WCL)"] --> AREA["Area (e.g. Wani)"]
-        AREA --> MINE["Mine (Lease Polygon)"]
-        DIST --> MINE
-        REGN --> MINE
-        MINE --> SEC["Sections (QR / NFC Tags)"]
+    subgraph Office["Mine office & DGMS"]
+        WEB["React web dashboard<br/>Mine Manager · Regulator"]
     end
 
-    subgraph DataBoundary["Statutory & Operational Data Layer"]
-        OBS["Observations & Photos\n(Geofenced / Tag Validated)"]
-        CAPA["CAPAs & After Photos\n(Rule C Maker-Checker)"]
-        INC["Incidents (No Worker PII)\n(24h Statutory Clock)"]
-        DIR["DGMS Directions &\nProhibition Orders"]
-        AUD["Audit Hash Chain\n(Append-Only SHA-256)"]
-    end
+    API["Node.js / Express API<br/>server/"]
+    AI["FastAPI AI pipeline<br/>mine-compliance/"]
+    LLM["Ollama (local) or<br/>NVIDIA API"]
+    SB[("Supabase<br/>Postgres + PostGIS<br/>RLS · Storage · pg_cron")]
 
-    subgraph DenialLayer["Rule D Denial Boundary (Zero Policy for Regulators)"]
-        RISK["Internal Mine Risk Scores"]
-        PROD["Live Shift Production"]
-        ATT["Worker Biometric Gate Punches"]
-        PII["Incident Worker Injury Details"]
-        DRAFT["Draft Inquiry Notes"]
-    end
-
-    FO -->|Offline Sync / QR Check-in| OBS
-    FO -->|Close Action + After Photos| CAPA
-    MM -->|Assign & Maker-Checker Verify| CAPA
-    MM -->|Manage Compliance & Returns| MINE
-    MM -->|Access Internal Operations| DenialLayer
-    REG -->|Geographic Read & Audit| DataBoundary
-    REG -->|Issue Notices & Directions| DIR
-    REG -.->|BLOCK (Zero RLS Policy)| DenialLayer
+    APP -- "sync push / pull" --> API
+    WEB -- "REST + JWT" --> API
+    WEB -- "Supabase Auth" --> SB
+    API --> SB
+    AI --> LLM
+    PDF["Regulation PDFs"] --> AI
+    AI -- "extracted obligations" --> SB
 ```
 
----
+### Access by role
 
-## 2. Non-Negotiable Core Design Rules
-
-### Rule A: Denormalize Scope Onto Every Regulator-Visible Row
-Every table accessible to regulators carries:
-`mine_id`, `mine_name`, `area_id`, `subsidiary_id`, `district_id`, `dgms_region_id`
-
-- **Write Time**: Auto-populated via database triggers (`BEFORE INSERT`).
-- **Hierarchy Evolution**: An `AFTER UPDATE` fan-out trigger (`trg_sync_mine_hierarchy_fanout`) on `mines` propagates any hierarchy reassignments across all downstream tables instantly.
-
-### Rule B: First-Class Provenance
-Every regulator-facing record includes:
-`provenance text CHECK (provenance IN ('INSPECTOR', 'INSTRUMENT', 'OPERATOR_SEALED', 'OPERATOR_UNSEALED'))`
-- `OPERATOR_SEALED`: A cryptographic SHA-256 hash of the row was computed and written to the audit hash chain at creation time.
-
-### Rule C: Maker-Checker on Corrective Actions (CAPAs)
-A corrective action closed by one person must be verified by a different person:
-1. **Table Constraint**: `CONSTRAINT check_capa_maker_checker CHECK (verified_by IS NULL OR verified_by <> closed_by)`
-2. **RLS Policy**: The `UPDATE` policy on `capas` explicitly checks that `closed_by <> auth.uid()` when transitioning status to `VERIFIED`.
-
-### Rule D: Regulator Data Boundary in RLS (Zero-Policy Guarantee)
-Regulators possess statutory safety jurisdiction, not commercial or internal management oversight:
-- **Zero Policy (Default Deny)** on: `mine_risk_scores`, `production_logs`, `attendance_logs`, `incident_worker_details`, and draft `incident_inquiries`.
-- Any query against these tables by a user with role `REGULATOR` returns **0 rows** at the Postgres kernel level.
-- `incident_inquiries` provides an RLS policy strictly for `status = 'FINAL'`.
-
-### Rule E: Offline-First for Field Officers
-Field officers working in open pits or underground mines experience complete network isolation:
-- **Client-Generated UUIDv4 PKs**: Primary keys are generated on device; retries are idempotent and never cause duplicate rows.
-- **Dual Timestamps**: `client_created_at` (device clock at inspection) and `server_created_at` (server default `now()`).
-- **Independent Records**: Records are valid the moment Postgres receives the insert without relying on prior trigger dependencies.
-
----
-
-## 3. Database Schema & Migration File Map
-
-| Migration File | Purpose & Contents |
-| :--- | :--- |
-| `20260913000001_extensions_and_enums.sql` | Enables `postgis`, `pgcrypto`. Defines enums: `user_role`, `scope_type`, `provenance_type`, `capa_status_enum`, `law_status_enum`, etc. |
-| `20260913000002_hierarchy_and_identity.sql` | `dgms_regions`, `districts`, `subsidiaries`, `areas`, `mines` (PostGIS `Polygon`), `sections` (QR/NFC tags), `public.users` (1:1 `auth.users`). |
-| `20260913000003_statutory_and_operational.sql` | `obligations`, `observations`, `observation_photos`, `capas` (Maker-Checker), `capa_after_photos`, `inspections`, `incidents` (24h window), `incident_worker_details`, `directions`, `direction_targets`, `prohibition_orders`, `audit_logs`. |
-| `20260913000004_denial_and_subtables.sql` | Rule-D Denial Tables: `mine_risk_scores`, `production_logs`, `attendance_logs`, `incident_inquiries`. |
-| `20260913000005_indexes.sql` | Partial indexes (`capas(due_date) WHERE status='OPEN'`), PostGIS GIST spatial indexes, audit hash-chain indexes, and scope indexes. |
-| `20260913000006_rls_helpers.sql` | JWT claim parser functions: `auth_role()`, `auth_scope_id()`, `in_mine_scope()`, `in_region_scope()`. |
-| `20260913000007_rls_hierarchy_and_identity.sql` | RLS for reference and identity tables. |
-| `20260913000008_rls_operational_and_statutory.sql` | RLS enforcing Rule C Maker-Checker on CAPAs and operational boundaries. |
-| `20260913000009_rls_denial_tables.sql` | RLS implementing Zero-Policy denial for Regulators. |
-| `20260913000010_triggers_and_functions.sql` | PostGIS Geofence calculation, Scope Fan-out, CAPA SLA due dates, Cryptographic Audit Hash Chain, and Auth App Metadata sync. |
-| `20260913000011_materialized_views_and_cron.sql` | Materialized views (`mv_mine_obligation_counts`, `mv_region_incident_counts`), escalation sweeps, and `pg_cron` jobs. |
-| `20260913000012_storage_policies.sql` | Private storage bucket `koylanetra-media` and path-based RLS `{mine_id}/{record_type}/{record_id}/{filename}`. |
-
----
-
-## 4. Per-Role Query Patterns & Index Design
-
-### Field Officer
-```sql
--- 1. Idempotent Offline Sync
-INSERT INTO observations (id, mine_id, section_id, reported_by, category, severity, checkin_method, device_id, client_created_at, description, provenance)
-VALUES ($1, $2, $3, auth.uid(), $4, $5, $6, $7, $8, $9, $10)
-ON CONFLICT (id) DO UPDATE SET description = EXCLUDED.description
-WHERE observations.server_created_at IS NULL;
-
--- 2. Open Assigned CAPAs (Indexed by owner_id, status, due_date)
-SELECT * FROM capas 
-WHERE owner_id = auth.uid() AND status = 'OPEN' 
-ORDER BY due_date ASC;
-
--- 3. Offline Section Cache
-SELECT tag_code, name, is_underground FROM sections WHERE mine_id = $1;
-
--- 4. Post-Reconnect Reconciliation (Indexed by device_id, server_created_at)
-SELECT id, server_created_at FROM observations 
-WHERE device_id = $1 AND server_created_at > $2;
-```
-
-### Mine Manager
-```sql
--- 1. Pending & Overdue Statutory Obligations (Indexed by mine_id, status, due_date)
-SELECT * FROM obligations 
-WHERE mine_id = $1 AND status <> 'COMPLETED' 
-ORDER BY due_date ASC;
-
--- 2. Priority CAPA Backlog (Indexed by mine_id, status, escalation_level)
-SELECT * FROM capas 
-WHERE mine_id = $1 AND status IN ('OPEN', 'ESCALATED') 
-ORDER BY escalation_level DESC, due_date ASC;
-
--- 3. Critical Observations Radar (Indexed by mine_id, severity, server_created_at)
-SELECT * FROM observations 
-WHERE mine_id = $1 AND severity IN ('HIGH', 'CRITICAL') AND server_created_at > now() - INTERVAL '24 hours';
-
--- 4. Maker-Checker Verification Mutation
-UPDATE capas 
-SET status = 'VERIFIED', verified_by = auth.uid(), verified_at = now(), verification_notes = $1 
-WHERE id = $2 AND status = 'PENDING_VERIFICATION' AND (closed_by IS NULL OR closed_by <> auth.uid());
-```
-
-### DGMS Regulator
-```sql
--- 1. Regional Jurisdiction Overview (Indexed by dgms_region_id)
-SELECT * FROM mines WHERE dgms_region_id = $1;
-
--- 2. Serious Accidents & Dangerous Occurrences (Indexed by dgms_region_id, incident_type, occurred_at)
-SELECT * FROM incidents 
-WHERE dgms_region_id = $1 AND incident_type IN ('FATAL', 'SERIOUS', 'DANGEROUS_OCCURRENCE')
-  AND occurred_at BETWEEN $2 AND $3;
-
--- 3. Active Enforcement Directions
-SELECT * FROM directions WHERE issued_by = auth.uid() ORDER BY status, compliance_date;
-
--- 4. Finalized Statutory Inquiries (Drafts filtered by RLS)
-SELECT * FROM incident_inquiries WHERE dgms_region_id = $1 AND status = 'FINAL';
-```
-
----
-
-## 5. Offline Sync & Conflict Resolution Strategy
-
-1. **Client-Side Generation**: Field devices assign UUIDv4 identifiers at observation / CAPA capture time before writing to local SQLite / IndexedDB storage.
-2. **Deterministic Hashing**: When capturing photos, the client calculates the SHA-256 checksum immediately upon camera shutter release.
-3. **Reconciliation Queue**: Upon reconnecting, the mobile client streams batches of pending mutations. Idempotent upserts ensure that network drops during multi-record sync never cause duplicate entity creation.
-4. **Offline Physical Tag Fallback**: Because satellite GPS signals cannot penetrate underground seams, presence is proven by scanning cryptographically signed physical NFC tags or high-contrast laminated QR codes affixed at designated statutory survey stations.
-
----
-
-## 6. Scalability Analysis: 10x Scale Flags & Mitigations
-
-**Current Design Baseline**: ~50 mines, 500 field users, 5,000 records/day.  
-**10x Scaling Target**: 500 mines, 5,000 field users, 50,000 records/day (1.5M records/month).
-
-| Component | 10x Scale Bottleneck | Architectural Mitigation |
+| Role | Where they work | What they can do |
 | :--- | :--- | :--- |
-| **Materialized Views** | `REFRESH MATERIALIZED VIEW CONCURRENTLY` every 5m causes heavy I/O and table lock overhead. | Replace batch MVs with **Trigger-Maintained Real-Time Rollup Tables** or TimescaleDB continuous aggregates. |
-| **CAPA Escalation Sweep** | Scanning 50,000 open items across 500 mines via `pg_cron` locks rows and causes update spikes. | Implement **Keyset Pagination in batches of 500**, or offload to an asynchronous background worker queue. |
-| **Audit Logs** | Generating ~150,000 immutable rows/day (~4.5M rows/month) degrades B-tree index efficiency. | Implement **Declarative Range Partitioning by Month** on `audit_logs(ts)` with cold storage archiving to S3/Parquet. |
-| **PostGIS Spatial Queries** | Dynamic polygon-point containment on high-frequency GPS stream. | Cache spatial containment per survey section; only perform raw PostGIS `ST_Contains` when GPS moves > 50m. |
+| **Field Officer (Sirdar)** | Mobile, often offline | Inspections, checklists, observations, closing CAPAs with after-photos, GIS map, SOS |
+| **Mine Worker** | Mobile | Observations, grievances, SOS |
+| **Contractor Supervisor** | Mobile | Contractor labour, contracts, compliance alerts |
+| **Mine Manager** | Web | One mine: obligations, CAPA verification, incidents, risk, production, workforce, reports |
+| **DGMS Regulator** | Web | Read and audit mines in their region; issue directions and prohibition orders |
+
+Regulators are blocked at the database level from internal commercial data: risk scores, production logs, biometric attendance, injured workers' personal details and draft inquiry notes. There is no RLS policy on those tables for the regulator role, so their queries return zero rows.
 
 ---
 
-## 7. Migration & Seed Execution Guide
+## Tech stack
 
-### Applying Migrations via Supabase CLI
+| Layer | Technology |
+| :--- | :--- |
+| Database & auth | Supabase: Postgres, PostGIS, pgcrypto, pg_cron, Row-Level Security, Storage |
+| API server | Node.js, Express, `@supabase/supabase-js` |
+| Web dashboard | React 19, Vite, Tailwind CSS, React Router, Recharts, lucide-react |
+| Mobile app | Flutter (Android / iOS), Drift (SQLite), Provider, geolocator, connectivity_plus, fl_chart |
+| AI pipeline | Python, FastAPI, Uvicorn, pdfplumber / PyMuPDF, Pydantic, Ollama or NVIDIA API |
+
+---
+
+## Repository structure
+
+```
+CoalNetra/
+├── client/            React + Vite web dashboard (Mine Manager and Regulator portals)
+├── server/            Express API: auth, today, compliance, regulator, mobile sync, SOS
+├── mobile_app/        Flutter field app (Sirdar, Worker, Contractor)
+├── mine-compliance/   FastAPI service that extracts obligations from regulation PDFs
+├── supabase/
+│   ├── migrations/    Schema, enums, RLS, triggers, materialized views, cron, storage
+│   ├── seed.sql       Demo dataset (one demo mine and region)
+│   └── tests/         RLS and business-rule tests
+├── IDEAS/             PRD, detailed project documentation, HTML field-app prototype
+└── package.json       npm workspaces: runs client and server together
+```
+
+---
+
+## Getting started
+
+### Prerequisites
+
+- Node.js 18 or later and npm
+- Flutter SDK (Dart 3.11 or later) and Android Studio or an emulator
+- Python 3.11
+- A Supabase project, or the Supabase CLI with Docker for a local instance
+- For AI extraction: [Ollama](https://ollama.com) running locally, or an NVIDIA API key
+
+### 1. Database (Supabase)
+
 ```bash
-# 1. Start local Supabase instance
+# Local instance
 supabase start
+supabase db reset                     # applies everything in supabase/migrations
 
-# 2. Apply all migrations in order
-supabase db reset
+# Demo data
+psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -f supabase/seed.sql
 
-# 3. Execute automated test suite
+# Optional: RLS and rule tests
 psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -f supabase/tests/rls_and_rules_test.sql
 ```
 
-### Seeding Demo Data
-```bash
-# Seed the complete statutory dataset (Demo OCP-1)
-psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -f supabase/seed.sql
+For a hosted project, link it with `supabase link` and run `supabase db push`.
+
+### 2. Environment variables
+
+Create these files. They are git-ignored and must never be committed.
+
+**`server/.env`**
+```env
+PORT=3001
+SUPABASE_URL=https://<project-ref>.supabase.co
+SUPABASE_ANON_KEY=<anon-key>
+# Only for a trusted local demo that needs mobile writes:
+DEMO_MODE=true
+SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
 ```
+
+**`client/.env`**
+```env
+VITE_SUPABASE_URL=https://<project-ref>.supabase.co
+VITE_SUPABASE_ANON_KEY=<anon-key>
+```
+
+**`mine-compliance/.env`**
+```env
+AI_PROVIDER=ollama                    # or: nvidia
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=llama3.2:3b
+NVIDIA_API_KEY=<your-key>
+NVIDIA_BASE_URL=<nvidia-endpoint>
+NVIDIA_MODEL=meta/llama-3.1-8b-instruct
+```
+
+> ⚠️ The Supabase **service-role key** stays on the server only. Never put it in the Flutter app, a `--dart-define`, the web client or any committed file.
+
+### 3. API server and web dashboard
+
+```bash
+npm install          # installs root, client and server workspaces
+npm run dev          # API on http://localhost:3001, dashboard on http://localhost:5173
+```
+
+Vite forwards `/api` calls to `localhost:3001`. To check that the API can reach the database, open `http://localhost:3001/api/health`.
+
+To create the demo login accounts (this needs `SUPABASE_SERVICE_ROLE_KEY` in `server/.env`):
+
+```bash
+node server/create-demo-users.js
+```
+
+### 4. Mobile app
+
+```bash
+cd mobile_app
+flutter pub get
+dart run build_runner build           # generates the Drift database code
+
+# Android emulator (reaches the host at 10.0.2.2, which is the default)
+flutter run
+
+# Physical device on the same Wi-Fi as your computer
+flutter run --dart-define=API_BASE_URL=http://<your-lan-ip>:3001
+```
+
+The phone and computer need to be on a network that allows device-to-device traffic.
+
+### 5. AI compliance pipeline
+
+```bash
+cd mine-compliance
+python -m venv .venv && source .venv/bin/activate    # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+python main.py                                       # http://localhost:8000
+```
+
+Upload a PDF to extract obligations:
+
+```bash
+curl -F "file=@clearance.pdf" http://localhost:8000/extract
+```
+
+Interactive API docs are at `http://localhost:8000/docs`. `download_rules.py` fetches the Coal Mines Regulation PDFs, and `ai_pipeline.py` analyses them from the command line.
+
+---
+
+## API overview
+
+| Method | Endpoint | Purpose |
+| :--- | :--- | :--- |
+| `GET` | `/api/health` | Server and database status |
+| `POST` | `/api/auth/login` · `GET /api/auth/me` | Sign in; current user and role |
+| `GET` | `/api/today` | Mine manager's daily view, including the risk score |
+| `GET` | `/api/obligations`, `/api/capas`, `/api/incidents`, `/api/directions`, `/api/observations`, `/api/mine` | Compliance data for a mine |
+| `GET` | `/api/regulator/*` | Regulator views: mines register, inspections, directions, accidents, permissions, assurance |
+| `POST` | `/api/sync/push` | Mobile uploads queued offline records |
+| `GET` | `/api/sync/pull` · `/api/sync/sos/active` | Mobile downloads updates; active SOS signals |
+
+---
+
+## Core design rules
+
+1. **Scope on every row.** Each record a regulator can see carries its mine, area, subsidiary, district and DGMS region. Triggers fill these in, so RLS checks stay simple and fast.
+2. **Provenance.** Every record states its source: inspector, instrument, or operator (sealed or unsealed). Sealed records are hashed into the audit chain.
+3. **Maker-checker on CAPAs.** A table constraint and an RLS policy both stop the person who closed a CAPA from also verifying it.
+4. **Regulator denial boundary.** Internal commercial and personal data has no regulator policy at all, so it is denied by default.
+5. **Offline-first.** Devices generate UUIDs for new records, and each record keeps both the device time and the server time. That makes sync safe to retry.
+
+The full schema, the purpose of each migration, per-role query patterns and scaling notes are in [`docs/BACKEND.md`](docs/BACKEND.md). The full project write-up is in [`IDEAS/README.md`](IDEAS/README.md).
+
+---
+
+## Current status
+
+This is a hackathon prototype.
+
+- **Built:** database schema with RLS and tests; Express API; manager and regulator web dashboards; Flutter field app with offline sync and SOS; AI obligation extraction service.
+- **Demo mode:** mobile writes go through a service-role-backed demo endpoint, turned on with `DEMO_MODE=true`. This is not production authentication, so don't expose it to an untrusted network.
+- **Partly on mock data:** some dashboard and mobile screens still use mock data (`client/src/data/`, `mobile_app/lib/models/mock_data.dart`).
+- **Planned:** connecting document storage and OCR to the API; BLE proximity SOS.
+
+---
+
+## Team
+
+**Blaze Squad** · Smart India Hackathon 2026
