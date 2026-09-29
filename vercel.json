@@ -1,39 +1,11 @@
-﻿{
+{
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "services": {
-    "client": {
-      "root": "client",
-      "framework": "vite"
-    },
-    "mine-compliance": {
-      "root": "mine-compliance",
-      "framework": "fastapi"
-    },
-    "server": {
-      "root": "server",
-      "framework": "express",
-      "bindings": [
-        {
-          "type": "service",
-          "service": "mine-compliance",
-          "format": "url",
-          "env": "MINE_COMPLIANCE_URL"
-        }
-      ]
-    }
+    "client": { "root": "client", "framework": "vite" },
+    "server": { "root": "server", "framework": "express" }
   },
   "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": {
-        "service": "server"
-      }
-    },
-    {
-      "source": "/(.*)",
-      "destination": {
-        "service": "client"
-      }
-    }
+    { "source": "/api/(.*)", "destination": { "service": "server" } },
+    { "source": "/(.*)", "destination": { "service": "client" } }
   ]
 }

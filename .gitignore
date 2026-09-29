@@ -1,35 +1,49 @@
 # Dependencies
 node_modules/
+server/node_modules/
+client/node_modules/
 
 # Environment secrets – NEVER commit real .env files
 .env
-.env.local
-.env.production
-.env.*.local
-*/.env
-*/.env.local
+.env.*
+*.env
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
 
-# Build outputs
+# IDE & Editor files
+.idea/
+**/.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Build outputs & Vercel
 client/dist/
 client/.vite/
+dist/
+build/
+.vercel/
+**/.vercel/
 
 # Python
 __pycache__/
+**/__pycache__/
 *.py[cod]
+*$py.class
 *.pyo
 .venv/
 venv/
+ENV/
 
 # OS files
 .DS_Store
 Thumbs.db
 
-# Environment files
-.env
-
-
-server/node_modules/
-client/node_modules/
-
 # Binaries
 *.apk
+

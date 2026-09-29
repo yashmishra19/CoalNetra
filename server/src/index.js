@@ -11,11 +11,8 @@ import authRouter from './routes/auth.js';
 import complianceRouter from './routes/compliance.js';
 import syncRouter from './routes/sync.js';
 
-import dotenv from 'dotenv';
-dotenv.config();
-
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3001;
 
 // ── CORS ──────────────────────────────────────────────────
 // In production, restrict to the frontend's Vercel domain.
@@ -67,10 +64,8 @@ app.get('/api/health', async (req, res) => {
   };
 
   try {
-    // Quick ping: count rows in a known table (fast, doesn't leak data)
-    const { error } = await supabase.rpc('get_mine_dashboard', {
-      p_mine_id: '55555555-5555-5555-5555-555555555501',
-    });
+    // Quick ping: check database connectivity (fast, doesn't leak data)
+    const { error } = await supabase.from('mines').select('count', { count: 'exact', head: true });
     if (error) {
       result.database = 'error';
       result.dbError = error.message;
@@ -89,8 +84,9 @@ app.get('/api/health', async (req, res) => {
 export default app;
 
 // Only start the HTTP server when running locally (not on Vercel)
-if (process.env.VERCEL !== '1') {
+if (!process.env.VERCEL) {
   app.listen(PORT, () => {
     console.log(`KoylaNetra API Server running on port ${PORT}`);
   });
 }
+
