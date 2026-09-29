@@ -17,7 +17,10 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    # Set ALLOWED_ORIGINS in Vercel env vars (comma-separated).
+    # Example: https://coalnetra.vercel.app,https://www.coalnetra.com
+    # Falls back to ["*"] for local development convenience.
+    allow_origins=os.getenv("ALLOWED_ORIGINS", "*").split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

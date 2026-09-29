@@ -7,10 +7,40 @@ import authRouter from './routes/auth.js';
 import complianceRouter from './routes/compliance.js';
 import syncRouter from './routes/sync.js';
 
+import dotenv from 'dotenv';
+dotenv.config();
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+// ── CORS ──────────────────────────────────────────────────
+// In production, restrict to the frontend's Vercel domain.
+// Set ALLOWED_ORIGIN in Vercel environment variables.
+// In local dev (no ALLOWED_ORIGIN set) we allow everything.
+const allowedOrigins = process.env.ALLOWED_ORIGIN
+  ? [process.env.ALLOWED_ORIGIN]
+  : [];
+if (process.env.VERCEL_URL) {
+  allowedOrigins.push(`https://${process.env.VERCEL_URL}`);
+}
+
+app.use(
+  cors(
+    allowedOrigins.length > 0
+      ? {
+          origin: (origin, callback) => {
+            // Allow requests with no origin (server-to-server / same-origin)
+            if (!origin || allowedOrigins.includes(origin)) {
+              callback(null, true);
+            } else {
+              callback(new Error(`CORS: origin ${origin} not allowed`));
+            }
+          },
+          credentials: true,
+        }
+      : undefined // no restrictions in local dev
+  )
+);
 app.use(express.json());
 
 // API Routes
@@ -26,6 +56,12 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'healthy', timestamp: new Date().toISOString(), app: 'KoylaNetra API' });
 });
 
-app.listen(PORT, () => {
-  console.log(`KoylaNetra API Server running on port ${PORT}`);
-});
+// Export for Vercel serverless runtime
+export default app;
+
+// Only start the HTTP server when running locally (not on Vercel)
+if (process.env.VERCEL !== '1') {
+  app.listen(PORT, () => {
+    console.log(`KoylaNetra API Server running on port ${PORT}`);
+  });
+}
