@@ -72,7 +72,7 @@ void main() {
       runApp(
         Provider<AppDatabase?>.value(
           value: database,
-          child: CoalGovApp(initError: initError),
+          child: CoalNetraApp(initError: initError),
         ),
       );
     },
@@ -83,14 +83,14 @@ void main() {
   );
 }
 
-class CoalGovApp extends StatelessWidget {
+class CoalNetraApp extends StatelessWidget {
   final String? initError;
-  const CoalGovApp({super.key, this.initError});
+  const CoalNetraApp({super.key, this.initError});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'CoalGov',
+      title: 'CoalNetra',
       theme: AppTheme.lightTheme,
       // If an error occurred during main(), show a red screen instead of black
       home: initError != null

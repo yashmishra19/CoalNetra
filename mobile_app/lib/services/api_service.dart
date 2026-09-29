@@ -11,7 +11,7 @@ class ApiService {
   // Default to the Android emulator loopback; override via --dart-define
   static const String _base = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:5000',
+    defaultValue: 'http://10.0.2.2:3001',
   );
 
   static const String _mineId = '55555555-5555-5555-5555-555555555501';

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { supabaseAdmin } from '../supabase.js';
+import { supabaseAdmin, supabase } from '../supabase.js';
 
 const router = Router();
 const DEMO_MINE_ID = '55555555-5555-5555-5555-555555555501';
@@ -10,13 +10,16 @@ const DEMO_REGION_ID = '11111111-1111-1111-1111-111111111101';
 const DEMO_SECTION_ID = '66666666-6666-6666-6666-666666666601';
 const DEMO_FIELD_OFFICER_ID = '77777777-7777-7777-7777-777777777701';
 
+// Use service role client if available, otherwise fall back to anon client
+const db = supabaseAdmin || supabase;
+
 function requireAdmin(res) {
   if (process.env.DEMO_MODE !== 'true') {
     res.status(403).json({ error: 'Sync writes are disabled. Enable DEMO_MODE only for a trusted demo environment.' });
     return false;
   }
-  if (!supabaseAdmin) {
-    res.status(503).json({ error: 'Sync is not configured: SUPABASE_SERVICE_ROLE_KEY is missing' });
+  if (!db) {
+    res.status(503).json({ error: 'Sync is not configured: Supabase client is not available' });
     return false;
   }
   return true;
@@ -65,7 +68,7 @@ router.post('/push', async (req, res) => {
         client_created_at: item.clientCreatedAt || new Date().toISOString(),
         description: item.description || item.category || 'Field observation submitted offline',
       };
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await db
         .from('observations').upsert(row, { onConflict: 'client_uuid' }).select('id, client_uuid').single();
       if (error) throw error;
       accepted.observations.push(data);
@@ -73,7 +76,7 @@ router.post('/push', async (req, res) => {
 
     for (const item of grievances) {
       if (!item.clientUuid) continue;
-      const { data, error } = await supabaseAdmin.from('grievances').upsert({
+      const { data, error } = await db.from('grievances').upsert({
         client_uuid: item.clientUuid,
         mine_id: DEMO_MINE_ID,
         raised_by: item.isAnonymous ? null : DEMO_FIELD_OFFICER_ID,
@@ -94,7 +97,7 @@ router.post('/push', async (req, res) => {
           Number.isNaN(dueDate.getTime())) {
         return res.status(400).json({ error: 'Invalid obligation update' });
       }
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await db
         .from('obligations')
         .update({ status, due_date: dueDate.toISOString(), updated_at: new Date().toISOString() })
         .eq('id', item.id)
@@ -116,7 +119,7 @@ router.post('/push', async (req, res) => {
           (longitude != null && (!Number.isFinite(longitude) || longitude < -180 || longitude > 180))) {
         return res.status(400).json({ error: 'Invalid SOS signal' });
       }
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await db
         .from('sos_signals')
         .upsert({
           client_uuid: item.clientUuid,
@@ -149,7 +152,7 @@ router.get('/sos/active', async (req, res) => {
     if (mineId !== DEMO_MINE_ID) {
       return res.status(403).json({ error: 'Mine is outside the demo sync scope' });
     }
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await db
       .from('sos_signals')
       .select('client_uuid, user_name, role, latitude, longitude, status, client_created_at, updated_at')
       .eq('mine_id', DEMO_MINE_ID)
@@ -168,10 +171,10 @@ router.get('/pull', async (req, res) => {
   if (!requireAdmin(res)) return;
   try {
     const [obligations, observations, capas, grievances] = await Promise.all([
-      supabaseAdmin.from('obligations').select('*').eq('mine_id', DEMO_MINE_ID).order('updated_at', { ascending: false }).limit(500),
-      supabaseAdmin.from('observations').select('*').eq('mine_id', DEMO_MINE_ID).order('server_created_at', { ascending: false }).limit(500),
-      supabaseAdmin.from('capas').select('*').eq('mine_id', DEMO_MINE_ID).order('updated_at', { ascending: false }).limit(500),
-      supabaseAdmin.from('grievances').select('*').eq('mine_id', DEMO_MINE_ID).order('updated_at', { ascending: false }).limit(500),
+      db.from('obligations').select('*').eq('mine_id', DEMO_MINE_ID).order('updated_at', { ascending: false }).limit(500),
+      db.from('observations').select('*').eq('mine_id', DEMO_MINE_ID).order('server_created_at', { ascending: false }).limit(500),
+      db.from('capas').select('*').eq('mine_id', DEMO_MINE_ID).order('updated_at', { ascending: false }).limit(500),
+      db.from('grievances').select('*').eq('mine_id', DEMO_MINE_ID).order('updated_at', { ascending: false }).limit(500),
     ]);
     const failed = [obligations, observations, capas, grievances].find(result => result.error);
     if (failed) throw failed.error;

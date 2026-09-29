@@ -18,7 +18,7 @@ class SyncService {
   DateTime? _retryAfter;
   static const apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:5000',
+    defaultValue: 'http://10.0.2.2:3001',
   );
 
   Future<SyncResult> sync({bool force = false}) async {

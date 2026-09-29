@@ -1,4 +1,4 @@
-﻿# CoalGov — Complete Project Documentation
+# CoalNetra — Complete Project Documentation
 
 > **SIH 2026 · PS 6024 · Ministry of Coal · Coal India Limited**
 > AI-Based Smart Governance & Compliance Monitoring System for Coal Mines
@@ -24,11 +24,11 @@
 
 ## 1. What Is This Project?
 
-**CoalGov** is an AI-powered compliance monitoring platform for Indian coal mines.
+**CoalNetra** is an AI-powered compliance monitoring platform for Indian coal mines.
 
 Think of it this way: A coal mine in India has to follow rules set by at least **5 different government regulators** (DGMS for safety, MoEFCC for environment, CPCB for pollution, Ministry of Coal for production, and Labour laws for workers). Each regulator sends its rules as thick **PDF documents**. The mine then has to prove it's following all those rules — and that proof currently lives in paper registers and spreadsheets.
 
-**CoalGov's job:** Take those PDF documents, extract every single legal obligation from them automatically using AI, turn them into a live trackable task list, let field workers log compliance evidence from their phones even without internet, and show managers, corporate executives, and regulators a real-time picture of how compliant each mine is.
+**CoalNetra's job:** Take those PDF documents, extract every single legal obligation from them automatically using AI, turn them into a live trackable task list, let field workers log compliance evidence from their phones even without internet, and show managers, corporate executives, and regulators a real-time picture of how compliant each mine is.
 
 ---
 
@@ -372,7 +372,7 @@ flutter build apk --release
 ### Built
 - Backend obligation extractor (Gemini + pdfplumber) - WORKING
 - Flutter 3-role navigation app - COMPLETE
-- CoalGov theme (all colors) - COMPLETE
+- CoalNetra theme (all colors) - COMPLETE
 - All 3 role home screens with correct tabs - COMPLETE
 - Offline SQLite schema (Observations, Evidences, Grievances) - COMPLETE
 - GPS trust scoring foundation - COMPLETE
@@ -412,4 +412,4 @@ flutter build apk --release
 
 **Competition:** SIH 2026 | PS 6024 | Ministry of Coal | Coal India Limited
 
-*Generated: September 2026 | CoalGov Team*
+*Generated: September 2026 | CoalNetra Team*

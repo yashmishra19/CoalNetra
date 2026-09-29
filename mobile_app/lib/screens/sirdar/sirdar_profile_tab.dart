@@ -303,7 +303,7 @@ class _SirdarProfileTabState extends State<SirdarProfileTab> {
         _buildProfileTile(
           Icons.info_outline,
           "App Version",
-          "CoalGov v2.4.0 (Supabase Live Linked)",
+          "CoalNetra v2.4.0 (Supabase Live Linked)",
         ),
         
         const SizedBox(height: 32),
