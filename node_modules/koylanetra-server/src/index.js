@@ -5,6 +5,7 @@ import navRouter from './routes/nav.js';
 import regulatorRouter from './routes/regulator.js';
 import authRouter from './routes/auth.js';
 import complianceRouter from './routes/compliance.js';
+import syncRouter from './routes/sync.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -17,6 +18,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/today', todayRouter);
 app.use('/api/nav', navRouter);
 app.use('/api/regulator', regulatorRouter);
+app.use('/api/sync', syncRouter);
 app.use('/api', complianceRouter); // obligations, capas, incidents, directions, mine
 
 
