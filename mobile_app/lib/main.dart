@@ -3,6 +3,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'database/database.dart';
+import 'services/app_services.dart';
 import 'services/sos_service.dart';
 import 'sync/sync_service.dart';
 import 'theme/app_theme.dart';
@@ -36,14 +37,15 @@ void main() {
         );
       };
 
-      // Initialize database outside of Provider to catch boot-up crashes
       AppDatabase? database;
+      AppServices? appServices;
       String? initError;
 
       try {
         database = AppDatabase();
         await database.seedDemoDataIfEmpty();
         SOSService.instance.initialize(database);
+        appServices = AppServices(db: database);
         // Drift database is lazy, but we can verify it can be instantiated
         final syncService = SyncService(database);
         syncService.sync().catchError(
@@ -70,8 +72,12 @@ void main() {
       }
 
       runApp(
-        Provider<AppDatabase?>.value(
-          value: database,
+        MultiProvider(
+          providers: [
+            Provider<AppDatabase?>.value(value: database),
+            if (appServices != null)
+              ChangeNotifierProvider<AppServices>.value(value: appServices),
+          ],
           child: CoalNetraApp(initError: initError),
         ),
       );
