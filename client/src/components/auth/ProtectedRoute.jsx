@@ -18,11 +18,14 @@ export default function ProtectedRoute({ children, allowedRoles }) {
     return <Navigate to="/login" replace />;
   }
 
+  const role = (user.role || '').toLowerCase();
+
   // role 'both' can access everything
-  if (user.role !== 'both' && !allowedRoles.includes(user.role)) {
+  if (role !== 'both' && !allowedRoles.includes(role)) {
     // If user has a single role, send them to their dashboard
-    if (user.role === 'mine_manager') return <Navigate to="/" replace />;
-    if (user.role === 'regulator') return <Navigate to="/regulator" replace />;
+    if (role === 'mine_manager') return <Navigate to="/" replace />;
+    if (role === 'field_officer') return <Navigate to="/" replace />;
+    if (role === 'regulator') return <Navigate to="/regulator" replace />;
     return <Navigate to="/login" replace />;
   }
 

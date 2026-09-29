@@ -70,8 +70,7 @@ class _GrievancesTabState extends State<GrievancesTab> {
           ),
           const SizedBox(height: 4),
           Text('File a concern — safely and securely.',
-              style:
-                  TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
           const SizedBox(height: 20),
           if (_submitted)
             _buildSuccessBanner()
@@ -79,7 +78,7 @@ class _GrievancesTabState extends State<GrievancesTab> {
             _buildForm(),
           ],
           const SizedBox(height: 24),
-          _buildPastTicket(),
+          _buildPastTicketsList(),
         ],
       ),
     );
@@ -98,17 +97,20 @@ class _GrievancesTabState extends State<GrievancesTab> {
           const Icon(Icons.check_circle_outline,
               color: AppTheme.greenVerified, size: 40),
           const SizedBox(height: 8),
-          const Text('Grievance Filed',
-              style: TextStyle(
-                  fontWeight: FontWeight.bold, fontSize: 16)),
+          const Text('Grievance Recorded to Secure Ledger!',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           const SizedBox(height: 4),
-          Text('Ticket #GRV-${DateTime.now().millisecondsSinceEpoch % 10000} created. SLA: 48 hrs.',
-              style: const TextStyle(fontSize: 12)),
+          const Text('Your concern has been saved and will sync automatically when online.',
+              style: TextStyle(fontSize: 12), textAlign: TextAlign.center),
           const SizedBox(height: 12),
-          TextButton(
+          ElevatedButton(
             onPressed: () => setState(() => _submitted = false),
-            child: const Text('File Another'),
-          ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.amberAccent,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('File Another Concern'),
+          )
         ],
       ),
     );
@@ -120,64 +122,45 @@ class _GrievancesTabState extends State<GrievancesTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Anonymous toggle
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey.shade200),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.visibility_off_outlined,
-                    size: 18, color: Colors.grey),
-                const SizedBox(width: 8),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Submit Anonymously',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w600, fontSize: 14)),
-                      Text('Your identity will not be recorded',
-                          style:
-                              TextStyle(fontSize: 11, color: Colors.grey)),
-                    ],
-                  ),
-                ),
-                Switch(
-                  value: _isAnonymous,
-                  onChanged: (v) => setState(() => _isAnonymous = v),
-                  activeThumbColor: AppTheme.amberAccent,
-                ),
-              ],
-            ),
+          SwitchListTile(
+            title: const Text('Submit Anonymously',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+            subtitle: const Text('Identity hidden from contractors',
+                style: TextStyle(fontSize: 11)),
+            value: _isAnonymous,
+            onChanged: (v) => setState(() => _isAnonymous = v),
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
-            initialValue: _lang,
-            decoration: const InputDecoration(labelText: 'Language'),
+            value: _lang,
+            decoration: const InputDecoration(
+              labelText: 'Language',
+              border: OutlineInputBorder(),
+            ),
             items: _langs
                 .map((l) => DropdownMenuItem(value: l, child: Text(l)))
                 .toList(),
-            onChanged: (v) => setState(() => _lang = v!),
+            onChanged: (v) => setState(() => _lang = v ?? 'English'),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           TextFormField(
-            maxLines: 5,
+            maxLines: 4,
             decoration: const InputDecoration(
+              border: OutlineInputBorder(),
               labelText: 'Describe your concern',
               alignLabelWithHint: true,
             ),
             onSaved: (v) => _grievanceText = v ?? '',
             validator: (v) =>
-                (v == null || v.length < 10) ? 'Please describe your concern' : null,
+                (v == null || v.length < 10) ? 'Please describe your concern (min 10 chars)' : null,
           ),
           const SizedBox(height: 16),
-          // Voice note button
           OutlinedButton.icon(
-            onPressed: () {},
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Bhashini AI voice input simulation activated')),
+              );
+            },
             icon: const Icon(Icons.mic, color: AppTheme.amberAccent),
             label: const Text('Record Voice Note (Bhashini)',
                 style: TextStyle(color: AppTheme.nearBlackCoal)),
@@ -186,74 +169,146 @@ class _GrievancesTabState extends State<GrievancesTab> {
           ElevatedButton(
             onPressed: _submit,
             style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14)),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                backgroundColor: AppTheme.amberAccent,
+                foregroundColor: Colors.white),
             child: const Text('SUBMIT GRIEVANCE',
-                style: TextStyle(fontSize: 15)),
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildPastTicket() {
+  Widget _buildPastTicketsList() {
+    final db = Provider.of<AppDatabase?>(context);
+    if (db == null) {
+      return _buildStaticFallbackTicket();
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Recent Tickets',
-            style:
-                TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        const Text('Recent Submitted Tickets',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
         const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey.shade200),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppTheme.amberAccent.withAlpha(30),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: const Icon(Icons.comment_outlined,
-                    color: AppTheme.amberAccent),
-              ),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('GRV-8291',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 13)),
-                    Text('Drinking water not available at Face 3A',
-                        style: TextStyle(fontSize: 12),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: AppTheme.amberAccent.withAlpha(30),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Text('In Review',
-                    style: TextStyle(
-                        fontSize: 10,
-                        color: AppTheme.amberAccent,
-                        fontWeight: FontWeight.bold)),
-              ),
-            ],
-          ),
+        StreamBuilder<List<Grievance>>(
+          stream: db.watchAllGrievances(),
+          builder: (context, snapshot) {
+            final grievances = snapshot.data ?? [];
+            if (grievances.isEmpty) {
+              return _buildStaticFallbackTicket();
+            }
+
+            return Column(
+              children: grievances.map((g) {
+                final statusText = g.syncStatus == 1 ? 'Synced' : 'Local Pending';
+                final statusColor = g.syncStatus == 1 ? AppTheme.greenVerified : AppTheme.amberAccent;
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: statusColor.withAlpha(30),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Icon(Icons.comment_outlined, color: statusColor),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('GRV-${g.clientUuid.substring(0, 6).toUpperCase()}',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 13)),
+                            Text(g.rawText,
+                                style: const TextStyle(fontSize: 12),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: statusColor.withAlpha(30),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(statusText,
+                            style: TextStyle(
+                                fontSize: 10,
+                                color: statusColor,
+                                fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            );
+          },
         ),
       ],
+    );
+  }
+
+  Widget _buildStaticFallbackTicket() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppTheme.amberAccent.withAlpha(30),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: const Icon(Icons.comment_outlined, color: AppTheme.amberAccent),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('GRV-8291',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                Text('Drinking water not available at Face 3A',
+                    style: TextStyle(fontSize: 12),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: AppTheme.amberAccent.withAlpha(30),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Text('In Review',
+                style: TextStyle(
+                    fontSize: 10,
+                    color: AppTheme.amberAccent,
+                    fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
     );
   }
 }

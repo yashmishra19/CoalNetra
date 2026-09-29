@@ -1,14 +1,22 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../database/database.dart';
 import '../../models/user_role.dart';
-import '../../services/app_services.dart';
 import '../../theme/app_theme.dart';
 import '../shared/observations_tab.dart';
+import '../observation_form.dart';
+import '../shared/ai_risk_score_tab.dart';
+import '../shared/statutory_compliance_tab.dart';
+import '../shared/violation_workflow_tab.dart';
+import '../shared/compliance_alerts_tab.dart';
+import '../shared/escalation_tab.dart';
+import '../shared/documents_tab.dart';
+import '../shared/compliance_report_tab.dart';
+import '../../widgets/sos_alert_banner.dart';
+import '../shared/sos_beacon_screen.dart';
 import 'sirdar_home_tab.dart';
-import 'sirdar_map_tab.dart';
+import 'mine_gis_map_tab.dart';
 import 'sirdar_profile_tab.dart';
+import 'inspection_checklist_screen.dart';
+import 'geo_inspection_screen.dart';
 
 class SirdarHome extends StatefulWidget {
   final MockUser user;
@@ -20,300 +28,189 @@ class SirdarHome extends StatefulWidget {
 
 class _SirdarHomeState extends State<SirdarHome> {
   int _selectedIndex = 0;
-  bool _sosActive = false;
-  String _sosStatusMessage = '';
-  String _currentMode = 'opencast';
 
-  // Real-time pending count from Drift stream
-  int _pendingCount = 0;
-  Timer? _pendingCountTimer;
-
-  // GPS confidence from LocationService
-  String _locationConfidence = 'acquiring...';
-  Timer? _locationTimer;
-
-  late final List<Widget> _tabs;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabs = [
-      const SirdarHomeTab(),
-      const ObservationsTab(),
-      const SirdarMapTab(),
-      SirdarProfileTab(user: widget.user),
-    ];
-    _startPollingPendingCount();
-    _startPollingLocationStatus();
-  }
-
-  @override
-  void dispose() {
-    _pendingCountTimer?.cancel();
-    _locationTimer?.cancel();
-    super.dispose();
-  }
-
-  void _startPollingPendingCount() {
-    _refreshPendingCount();
-    _pendingCountTimer = Timer.periodic(const Duration(seconds: 10), (_) => _refreshPendingCount());
-  }
-
-  Future<void> _refreshPendingCount() async {
-    final db = Provider.of<AppDatabase?>(context, listen: false);
-    if (db == null || !mounted) return;
-    try {
-      final count = await db.getPendingCount();
-      if (mounted) setState(() => _pendingCount = count);
-    } catch (_) {}
-  }
-
-  void _startPollingLocationStatus() {
-    _locationTimer = Timer.periodic(const Duration(seconds: 30), (_) async {
-      final appServices = Provider.of<AppServices>(context, listen: false);
-      final locSvc = appServices.locationService;
-      if (locSvc == null || !mounted) return;
-      final snap = await locSvc.getCurrentSnapshot();
-      if (mounted) {
-        setState(() {
-          _locationConfidence = snap.confidence == 'gps_live' ? 'GPS live' : 'Last known';
-        });
-      }
-    });
-  }
-
-  Future<void> _triggerSos() async {
-    final appServices = Provider.of<AppServices>(context, listen: false);
-    final sosSvc = appServices.meshSosService;
-    if (sosSvc == null) {
-      _showSosResult('SOS service unavailable. Call +91-112.');
-      return;
-    }
-    setState(() {
-      _sosActive = true;
-      _sosStatusMessage = '🚨 Broadcasting SOS over Cellular, WiFi & Bluetooth…';
-    });
-
-    try {
-      final result = await sosSvc.triggerSos();
-      if (mounted) {
-        setState(() {
-          _sosStatusMessage = result.anySent
-              ? '✓ SOS sent via ${result.channelSummary}'
-              : 'SOS stored — will send when online';
-        });
-        Future.delayed(const Duration(seconds: 5), () {
-          if (mounted) setState(() => _sosActive = false);
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _sosStatusMessage = 'SOS stored locally — syncs when connected';
-        });
-        Future.delayed(const Duration(seconds: 5), () {
-          if (mounted) setState(() => _sosActive = false);
-        });
-      }
-    }
-  }
-
-  void _showSosResult(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: AppTheme.redDanger),
-    );
-  }
+  // 10 tabs for Sirdar covering all TRRAM features
+  static const List<_NavItem> _navItems = [
+    _NavItem(Icons.home_outlined, Icons.home, 'Home'),
+    _NavItem(Icons.assignment_outlined, Icons.assignment, 'Compliance'),
+    _NavItem(Icons.map_outlined, Icons.map, 'Map'),
+    _NavItem(Icons.person_outline, Icons.person, 'Profile'),
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.paper,
+      backgroundColor: AppTheme.offWhiteBackground,
+      extendBody: true,
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
-            // ── Status bar — intrinsic height (no fixed px that clips)
+            // Sync Status Bar
             Container(
-              color: AppTheme.graphite,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    _timeNow(),
-                    style: const TextStyle(color: Color(0xFFCFD9DD), fontSize: 12, fontWeight: FontWeight.bold),
-                  ),
-                  const Row(children: [
-                    Icon(Icons.signal_cellular_4_bar, size: 14, color: Color(0xFFCFD9DD)),
-                    SizedBox(width: 6),
-                    Icon(Icons.battery_5_bar, size: 14, color: Color(0xFFCFD9DD)),
-                  ]),
-                ],
+              width: double.infinity,
+              color: AppTheme.amberAccent,
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: const Text(
+                "Offline · 3 records queued for sync",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
               ),
             ),
+            SOSAlertBanner(onOpenMap: () => setState(() => _selectedIndex = 2)),
 
-            // ── App bar
-            Container(
-              color: AppTheme.graphite,
-              padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Shift B', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.white)),
-                        Text('Demo OCP-1 · Wani Area', style: TextStyle(fontSize: 11.5, color: Colors.grey[400])),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.terrain, color: Colors.white, size: 20),
-                    onPressed: () {
-                      setState(() => _currentMode = _currentMode == 'opencast' ? 'underground' : 'opencast');
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text('Switched to ${_currentMode.toUpperCase()} mode'),
-                        duration: const Duration(milliseconds: 1000),
-                      ));
-                    },
-                  ),
-                ],
-              ),
-            ),
-
-            // ── Sync strip (real pending count + GPS confidence)
-            Container(
-              color: AppTheme.graphite2,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withAlpha(23),
-                      borderRadius: BorderRadius.circular(11),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 7,
-                          height: 7,
-                          decoration: BoxDecoration(
-                            color: _pendingCount > 0 ? AppTheme.amberAccent : AppTheme.greenVerified,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          _pendingCount > 0 ? '$_pendingCount pending' : 'Synced',
-                          style: const TextStyle(color: Color(0xFFCFD9DD), fontSize: 12, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: Text(
-                      '📍 $_locationConfidence',
-                      style: const TextStyle(color: Color(0xFFCFD9DD), fontSize: 12),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    _currentMode == 'opencast' ? 'OC' : 'UG',
-                    style: const TextStyle(color: Color(0xFFCFD9DD), fontSize: 12),
-                  ),
-                  const Spacer(),
-                  const Text('4h 12m left', style: TextStyle(color: Color(0xFFCFD9DD), fontSize: 12, fontWeight: FontWeight.bold)),
-                ],
-              ),
-            ),
-
-            // ── SOS active sheet
-            if (_sosActive)
-              Container(
-                color: AppTheme.redDanger,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            if (_selectedIndex == 0) ...[
+              // Custom Header - Only on Home Tab
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                 child: Row(
                   children: [
-                    const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
+                    const CircleAvatar(
+                      radius: 20,
+                      backgroundColor: AppTheme.amberAccent,
+                      foregroundImage:
+                          NetworkImage("https://i.pravatar.cc/150?u=siram"),
+                      child: Text("SR",
+                          style: TextStyle(color: Colors.white)),
+                    ),
                     const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(_sosStatusMessage, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.user.role.userName,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        Text(
+                          "Sirdar · Sardega OCP",
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
+                    // SOS Emergency Beacon Button
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => SOSBeaconScreen(
+                              userName: widget.user.role.userName,
+                              role: widget.user.role.displayName,
+                            ),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppTheme.redDanger,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(color: AppTheme.redDanger.withOpacity(0.4), blurRadius: 6),
+                          ],
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.sensors, color: Colors.white, size: 14),
+                            SizedBox(width: 4),
+                            Text(
+                              "SOS",
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    // Notification bell with alert badge
+                    Stack(
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.notifications_none,
+                              color: Colors.blueGrey[300]),
+                          onPressed: () => _showAlertSheet(context),
+                        ),
+                        Positioned(
+                          right: 8,
+                          top: 8,
+                          child: Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: AppTheme.redDanger,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.menu, color: Colors.blueGrey[300]),
+                      onPressed: () => _showQuickActions(context),
                     ),
                   ],
                 ),
               ),
+            ],
 
-            // ── Main tab content
             Expanded(
-              child: IndexedStack(index: _selectedIndex, children: _tabs),
-            ),
-
-            // ── EMERGENCY button + bottom nav
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                GestureDetector(
-                  onTap: _triggerSos,
-                  child: Container(
-                    width: double.infinity,
-                    height: 46,
-                    color: _sosActive ? AppTheme.redDanger.withAlpha(180) : AppTheme.redDanger,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.warning, color: Colors.white, size: 17),
-                        const SizedBox(width: 9),
-                        Text(
-                          _sosActive ? 'SOS BROADCASTING...' : 'EMERGENCY',
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1.5, fontSize: 15),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Container(
-                  color: AppTheme.panel,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _buildBottomTab(0, Icons.home_filled, 'Shift'),
-                      _buildBottomTab(1, Icons.done_all, 'Actions'),
-                      _buildBottomTab(2, Icons.map_outlined, 'Map'),
-                      _buildBottomTab(3, Icons.person, 'Profile'),
-                    ],
-                  ),
-                ),
-              ],
+              child: IndexedStack(
+                index: _selectedIndex,
+                children: [
+                  const SirdarHomeTab(),
+                  const _SirdarComplianceHub(),
+                  const MineGISMapTab(),
+                  SirdarProfileTab(user: widget.user),
+                ],
+              ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildBottomTab(int index, IconData icon, String label) {
-    final bool isSelected = _selectedIndex == index;
-    return Expanded(
-      child: InkWell(
-        onTap: () => setState(() => _selectedIndex = index),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text("Opening Inspection Form..."),
+                duration: Duration(milliseconds: 500)),
+          );
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => const ObservationFormScreen()),
+          );
+        },
+        backgroundColor: AppTheme.amberAccent,
+        elevation: 6,
+        shape: const CircleBorder(),
+        child: const Icon(Icons.add, color: Colors.white, size: 32),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: BottomAppBar(
+        shape: const CircularNotchedRectangle(),
+        notchMargin: 8,
+        color: Colors.white,
+        child: SizedBox(
+          height: 60,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              Icon(icon, size: 21, color: isSelected ? AppTheme.graphite : AppTheme.ink3),
-              const SizedBox(height: 3),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.bold,
-                  color: isSelected ? AppTheme.graphite : AppTheme.ink3,
-                ),
-              ),
+              _buildNavItem(0),
+              _buildNavItem(1),
+              const SizedBox(width: 40), // FAB space
+              _buildNavItem(2),
+              _buildNavItem(3),
             ],
           ),
         ),
@@ -321,8 +218,320 @@ class _SirdarHomeState extends State<SirdarHome> {
     );
   }
 
-  String _timeNow() {
-    final now = DateTime.now();
-    return '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+  Widget _buildNavItem(int index) {
+    final item = _navItems[index];
+    final isSelected = _selectedIndex == index;
+    return InkWell(
+      onTap: () => setState(() => _selectedIndex = index),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isSelected ? item.activeIcon : item.icon,
+            color: isSelected ? AppTheme.amberAccent : Colors.grey,
+          ),
+          Text(
+            item.label,
+            style: TextStyle(
+              fontSize: 10,
+              color: isSelected ? AppTheme.amberAccent : Colors.grey,
+              fontWeight:
+                  isSelected ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
+    );
   }
+
+  void _showAlertSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        height: 360,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: 16),
+            Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 16),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Icon(Icons.bolt, color: AppTheme.redDanger),
+                  SizedBox(width: 8),
+                  Text('Compliance Alerts',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            _alertTile('DGMS Report overdue in 3 days', 'CRITICAL',
+                AppTheme.redDanger),
+            _alertTile('Boiler cert expiring in 7 days', 'HIGH',
+                Colors.deepOrange),
+            _alertTile('Gas pattern detected – Face 3A', 'RECURRING',
+                Colors.purple),
+            _alertTile('Conveyor inspection due tomorrow', 'MEDIUM',
+                AppTheme.amberAccent),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _alertTile(String title, String badge, Color color) {
+    return ListTile(
+      dense: true,
+      leading:
+          Icon(Icons.circle, color: color, size: 10),
+      title: Text(title, style: const TextStyle(fontSize: 13)),
+      trailing: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+            color: color.withAlpha(25),
+            borderRadius: BorderRadius.circular(6)),
+        child: Text(badge,
+            style: TextStyle(
+                color: color,
+                fontSize: 9,
+                fontWeight: FontWeight.bold)),
+      ),
+    );
+  }
+
+  void _showQuickActions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Quick Actions',
+                style:
+                    TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                _quickAction(
+                  context,
+                  Icons.checklist,
+                  'Inspection\nChecklist',
+                  AppTheme.cobaltBlue,
+                  () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) =>
+                              const InspectionChecklistScreen())),
+                ),
+                _quickAction(
+                  context,
+                  Icons.gps_fixed,
+                  'Geo\nInspection',
+                  AppTheme.greenVerified,
+                  () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) =>
+                              const GeoInspectionScreen())),
+                ),
+                _quickAction(context, Icons.psychology, 'AI Risk\nScore',
+                    Colors.purple, () {
+                  Navigator.pop(context);
+                  setState(() => _selectedIndex = 1);
+                }),
+                _quickAction(context, Icons.campaign, 'Escalation',
+                    AppTheme.redDanger, () {
+                  Navigator.pop(context);
+                  setState(() => _selectedIndex = 1);
+                }),
+              ],
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _quickAction(BuildContext context, IconData icon, String label,
+      Color color, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.pop(context);
+        onTap();
+      },
+      child: Container(
+        width: 80,
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: color.withAlpha(15),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withAlpha(60)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 28),
+            const SizedBox(height: 6),
+            Text(label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontSize: 10,
+                    color: color,
+                    fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Sirdar's compliance hub – a scrollable menu of all compliance features
+class _SirdarComplianceHub extends StatelessWidget {
+  const _SirdarComplianceHub();
+
+  @override
+  Widget build(BuildContext context) {
+    final features = [
+      _Feature('AI Risk Score', Icons.psychology, Colors.purple,
+          const AIRiskScoreTab()),
+      _Feature('Statutory Compliance', Icons.gavel, AppTheme.cobaltBlue,
+          const StatutoryComplianceTab()),
+      _Feature('Violation Workflow', Icons.report_problem, AppTheme.redDanger,
+          const ViolationWorkflowTab()),
+      _Feature('Compliance Alerts', Icons.bolt, AppTheme.amberAccent,
+          const ComplianceAlertsTab()),
+      _Feature('Escalation System', Icons.campaign, Colors.deepOrange,
+          const EscalationTab()),
+      _Feature('Documents & OCR', Icons.folder_open, Colors.teal,
+          const DocumentsTab()),
+      _Feature('Generate Report', Icons.summarize, AppTheme.greenVerified,
+          const ComplianceReportTab()),
+      _Feature('Observations', Icons.assignment_outlined, Colors.blueGrey,
+          const ObservationsTab()),
+    ];
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'COMPLIANCE FEATURES',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.5,
+              color: Colors.grey,
+            ),
+          ),
+          const SizedBox(height: 12),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 1.3,
+            ),
+            itemCount: features.length,
+            itemBuilder: (context, i) {
+              final f = features[i];
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => Scaffold(
+                        appBar: AppBar(
+                          backgroundColor: AppTheme.nearBlackCoal,
+                          foregroundColor: Colors.white,
+                          title: Text(f.label,
+                              style: const TextStyle(fontSize: 15)),
+                        ),
+                        backgroundColor: AppTheme.offWhiteBackground,
+                        body: f.screen,
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppTheme.borderGrey),
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withAlpha(4),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2))
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: f.color.withAlpha(20),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(f.icon, color: f.color, size: 28),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        f.label,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 80),
+        ],
+      ),
+    );
+  }
+}
+
+class _NavItem {
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+  const _NavItem(this.icon, this.activeIcon, this.label);
+}
+
+class _Feature {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final Widget screen;
+  _Feature(this.label, this.icon, this.color, this.screen);
 }

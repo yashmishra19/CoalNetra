@@ -1,31 +1,85 @@
 import { Router } from 'express';
+import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../supabase.js';
 
 const router = Router();
 
-const mockUsers = [
-  { id: '77777777-7777-7777-7777-777777777702', email: 'manager@koylanetra.gov.in', password: 'KoylaManager@2026', name: 'Rajesh Kumar', role: 'mine_manager', designation: 'Statutory Mine Manager', site: 'Demo OCP-1', mineId: '55555555-5555-5555-5555-555555555501' },
-  { id: '77777777-7777-7777-7777-777777777703', email: 'regulator@dgms.gov.in', password: 'DgmsRegulator@2026', name: 'Dr. V. K. Sharma', role: 'regulator', designation: 'Director of Mines Safety', region: 'DGMS Nagpur Region-2', regionId: '11111111-1111-1111-1111-111111111101', initials: 'VS' },
-  { id: '77777777-7777-7777-7777-777777777701', email: 'fo@koylanetra.gov.in', password: 'KoylaField@2026', name: 'B. Oraon', role: 'field_officer', designation: 'Overman / Field Safety Officer', site: 'Demo OCP-1', mineId: '55555555-5555-5555-5555-555555555501' },
-  { id: 'u1', email: 'mahato@coalgov.in', password: 'mine123', name: 'R. Mahato', role: 'mine_manager', designation: 'Mine Manager', site: 'Demo OCP-1', mineId: '55555555-5555-5555-5555-555555555501', avatar: 'https://i.pravatar.cc/80?img=12' },
-  { id: 'u2', email: 'kulkarni@dgms.gov.in', password: 'dgms123', name: 'P.B. Kulkarni', role: 'regulator', designation: 'Director of Mines Safety', region: 'DGMS Nagpur Region-2', regionId: '11111111-1111-1111-1111-111111111101', initials: 'PK' },
-  { id: 'u3', email: 'demo@koylanetra.in', password: 'demo', name: 'Demo User', role: 'both', designation: 'Demo Account' }
-];
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
-router.post('/login', (req, res) => {
+// Creates a client that acts AS the logged-in user, so row-level
+// security rules (like "read only your own profile") apply correctly.
+function clientForToken(token) {
+  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+  });
+}
+
+router.post('/login', async (req, res) => {
   const { email, password } = req.body;
-  const user = mockUsers.find(u => u.email === email && u.password === password);
-  if (!user) return res.status(401).json({ error: 'Invalid email or password' });
-  const { password: _, ...safeUser } = user;
-  res.json({ user: safeUser, token: 'mock-jwt-' + user.id });
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required' });
+  }
+
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error || !data.session) {
+    return res.status(401).json({ error: 'Invalid email or password' });
+  }
+
+  const token = data.session.access_token;
+  const scoped = clientForToken(token);
+
+  const { data: profile, error: profileError } = await scoped
+    .from('users')
+    .select('*')
+    .eq('id', data.user.id)
+    .single();
+
+  if (profileError || !profile) {
+    return res.status(403).json({ error: 'No profile found for this account. Contact an administrator.' });
+  }
+
+  const safeUser = {
+    id: profile.id,
+    email: data.user.email,
+    name: profile.full_name || data.user.email,
+    role: profile.role,
+    scopeType: profile.scope_type,
+    scopeId: profile.scope_id,
+  };
+
+  res.json({ user: safeUser, token });
 });
 
-router.get('/me', (req, res) => {
+router.get('/me', async (req, res) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (!token) return res.status(401).json({ error: 'Not authenticated' });
-  const userId = token.replace('mock-jwt-', '');
-  const user = mockUsers.find(u => u.id === userId);
-  if (!user) return res.status(401).json({ error: 'Invalid token' });
-  const { password: _, ...safeUser } = user;
+
+  const scoped = clientForToken(token);
+  const { data: userData, error: userError } = await scoped.auth.getUser(token);
+  if (userError || !userData.user) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+
+  const { data: profile, error: profileError } = await scoped
+    .from('users')
+    .select('*')
+    .eq('id', userData.user.id)
+    .single();
+
+  if (profileError || !profile) {
+    return res.status(403).json({ error: 'No profile found for this account.' });
+  }
+
+  const safeUser = {
+    id: profile.id,
+    email: userData.user.email,
+    name: profile.full_name || userData.user.email,
+    role: profile.role,
+    scopeType: profile.scope_type,
+    scopeId: profile.scope_id,
+  };
+
   res.json({ user: safeUser });
 });
 
