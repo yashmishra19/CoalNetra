@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../models/user_role.dart';
-import '../services/app_services.dart';
 import '../theme/app_theme.dart';
 import 'sirdar/sirdar_home.dart';
 import 'worker/worker_home.dart';
@@ -36,19 +34,7 @@ class RoleSelectScreen extends StatelessWidget {
     }
   }
 
-  Future<void> _navigate(BuildContext context, UserRole role) async {
-    final appServices = Provider.of<AppServices>(context, listen: false);
-
-    // Initialise role-specific services BEFORE navigating so the
-    // MeshSosService listener starts with the correct userId/role.
-    await appServices.initForRole(
-      userId: _userIdFor(role),
-      role: _roleKey(role),
-      userName: role.userName,
-    );
-
-    if (!context.mounted) return;
-
+  void _navigate(BuildContext context, UserRole role) {
     final user = MockUser(role: role);
     Widget home;
     switch (role) {

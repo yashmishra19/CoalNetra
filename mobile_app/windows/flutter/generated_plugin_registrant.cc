@@ -7,6 +7,7 @@
 #include "generated_plugin_registrant.h"
 
 #include <connectivity_plus/connectivity_plus_windows_plugin.h>
+#include <file_selector_windows/file_selector_windows.h>
 #include <flutter_ble_central/flutter_ble_central_plugin_c_api.h>
 #include <flutter_ble_peripheral/flutter_ble_peripheral_plugin_c_api.h>
 #include <geolocator_windows/geolocator_windows.h>
@@ -15,6 +16,8 @@
 void RegisterPlugins(flutter::PluginRegistry* registry) {
   ConnectivityPlusWindowsPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("ConnectivityPlusWindowsPlugin"));
+  FileSelectorWindowsRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("FileSelectorWindows"));
   FlutterBleCentralPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("FlutterBleCentralPluginCApi"));
   FlutterBlePeripheralPluginCApiRegisterWithRegistrar(

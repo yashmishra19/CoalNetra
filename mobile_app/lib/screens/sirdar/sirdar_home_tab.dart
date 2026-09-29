@@ -221,7 +221,10 @@ class SirdarHomeTab extends StatelessWidget {
             onPressed: () {
               Navigator.pop(ctx);
               Navigator.push(context, MaterialPageRoute(
-                builder: (_) => ObservationFormScreen(initialCategory: title),
+                builder: (_) => ObservationFormScreen(
+                  initialCategory: 'CAPA Closure',
+                  initialDescription: '$title\n$details',
+                ),
               ));
             },
             child: const Text('Log Action / Inspection'),
