@@ -46,6 +46,8 @@ Thumbs.db
 
 # Binaries
 *.apk
+!apk/CoalNetra.apk
+
 
 .vercel
 .env*

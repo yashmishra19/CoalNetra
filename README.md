@@ -9,6 +9,19 @@ CoalNetra replaces paper statutory registers and scattered spreadsheets with one
 
 ---
 
+## 📱 Mobile App (Android APK Download)
+
+> **Evaluators & Invigilators**: You can directly download and install the compiled CoalNetra Android application onto any Android device:
+> 
+> 📥 **[Download CoalNetra Android APK (v1.0.0)](https://github.com/yashmishra19/CoalNetra/raw/main/apk/CoalNetra.apk)**
+> 
+> * **Direct Repository Path**: [`apk/CoalNetra.apk`](./apk/CoalNetra.apk)
+> * **Installation & Feature Guide**: [`apk/README.md`](./apk/README.md)
+> * **Key Mobile Features**: Offline-first reporting via Drift SQLite, real-time photographic evidence capture with GPS watermark, speech-to-text voice note logging, live atmospheric multi-gas telemetry (CH₄, CO, Air velocity, Dust PM10), and automatic synchronization with the CoalNetra Web Portal.
+
+---
+
+
 ## The problem
 
 A single working coal mine answers to several regulators at once: DGMS for safety, MoEFCC and CPCB for environment and pollution, the Ministry of Coal for production, and the labour authorities for workers. Their rules arrive as long PDFs. Proof of compliance usually lives in paper registers, spreadsheets and delayed reports. That makes records inconsistent, lets compliance gaps go unnoticed, and slows decisions.
