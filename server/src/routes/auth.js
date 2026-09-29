@@ -1,90 +1,86 @@
 import { Router } from 'express';
-import { supabase, createUserClient } from '../supabase.js';
+import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../supabase.js';
 
 const router = Router();
 
-// ── POST /api/auth/login ──────────────────────────────────────────────────────
-// Signs in with Supabase Auth (email + password).
-// Returns the Supabase JWT access token + user profile from public.users.
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+
+// Creates a client that acts AS the logged-in user, so row-level
+// security rules (like "read only your own profile") apply correctly.
+function clientForToken(token) {
+  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+  });
+}
+
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body || {};
+  const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required' });
   }
 
-  // 1. Sign in with Supabase Auth
-  const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (authError || !authData?.session) {
-    return res.status(401).json({ error: authError?.message || 'Invalid email or password' });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error || !data.session) {
+    return res.status(401).json({ error: 'Invalid email or password' });
   }
 
-  const { session, user: authUser } = authData;
+  const token = data.session.access_token;
+  const scoped = clientForToken(token);
 
-  // 2. Fetch the app profile from public.users using the user's own token (RLS applies)
-  const userClient = createUserClient(session.access_token);
-  const { data: profile, error: profileError } = await userClient
+  const { data: profile, error: profileError } = await scoped
     .from('users')
-    .select('id, email, full_name, role, designation, mine_id, region_id')
-    .eq('id', authUser.id)
+    .select('*')
+    .eq('id', data.user.id)
     .single();
 
   if (profileError || !profile) {
-    // Profile might not exist yet — return a minimal user object
-    console.warn('Profile not found for', authUser.id, profileError?.message);
-    const minimalUser = {
-      id: authUser.id,
-      email: authUser.email,
-      full_name: authUser.email,
-      role: 'field_officer',
-      designation: '',
-      mine_id: null,
-      region_id: null,
-    };
-    return res.json({ user: minimalUser, token: session.access_token });
+    return res.status(403).json({ error: 'No profile found for this account. Contact an administrator.' });
   }
 
-  return res.json({ user: profile, token: session.access_token });
+  const safeUser = {
+    id: profile.id,
+    email: data.user.email,
+    name: profile.full_name || data.user.email,
+    role: profile.role,
+    scopeType: profile.scope_type,
+    scopeId: profile.scope_id,
+  };
+
+  res.json({ user: safeUser, token });
 });
 
-// ── GET /api/auth/me ──────────────────────────────────────────────────────────
-// Validates the Bearer token and returns the user profile.
 router.get('/me', async (req, res) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (!token) return res.status(401).json({ error: 'Not authenticated' });
 
-  // Verify the token by calling Supabase
-  const { data: { user: authUser }, error } = await supabase.auth.getUser(token);
-  if (error || !authUser) {
-    return res.status(401).json({ error: 'Invalid or expired token' });
+  const scoped = clientForToken(token);
+  const { data: userData, error: userError } = await scoped.auth.getUser(token);
+  if (userError || !userData.user) {
+    return res.status(401).json({ error: 'Invalid token' });
   }
 
-  // Fetch profile using the user's own token
-  const userClient = createUserClient(token);
-  const { data: profile, error: profileError } = await userClient
+  const { data: profile, error: profileError } = await scoped
     .from('users')
-    .select('id, email, full_name, role, designation, mine_id, region_id')
-    .eq('id', authUser.id)
+    .select('*')
+    .eq('id', userData.user.id)
     .single();
 
   if (profileError || !profile) {
-    return res.json({
-      user: {
-        id: authUser.id,
-        email: authUser.email,
-        full_name: authUser.email,
-        role: 'field_officer',
-        designation: '',
-        mine_id: null,
-        region_id: null,
-      },
-    });
+    return res.status(403).json({ error: 'No profile found for this account.' });
   }
 
-  return res.json({ user: profile });
+  const safeUser = {
+    id: profile.id,
+    email: userData.user.email,
+    name: profile.full_name || userData.user.email,
+    role: profile.role,
+    scopeType: profile.scope_type,
+    scopeId: profile.scope_id,
+  };
+
+  res.json({ user: safeUser });
 });
 
 export default router;

@@ -3,13 +3,12 @@
  */
 
 import { mockInspectionsCapaData } from '../data/mockInspectionsCapa';
-import { apiFetch } from './apiFetch';
 
 const MINE_ID = '55555555-5555-5555-5555-555555555501';
 
 export async function getCapaOverview() {
   try {
-    const res = await apiFetch(`/api/capas?mineId=${MINE_ID}`);
+    const res = await fetch(`/api/capas?mineId=${MINE_ID}`);
     if (!res.ok) throw new Error('Failed to fetch CAPAs');
     const data = await res.json();
     return {
@@ -28,7 +27,7 @@ export async function getOpenCapas(filter = 'all') {
     let url = `/api/capas?mineId=${MINE_ID}`;
     if (filter === 'overdue') url += '&status=OPEN';
     else if (filter === 'escalated') url += '&status=ESCALATED';
-    const res = await apiFetch(url);
+    const res = await fetch(url);
     if (!res.ok) throw new Error('Failed to fetch CAPAs');
     const data = await res.json();
     let list = data.capas || [];
@@ -47,7 +46,7 @@ export async function getOpenCapas(filter = 'all') {
 }
 
 export async function getCapaDetail(id) {
-  const res = await apiFetch(`/api/capas?mineId=${MINE_ID}`);
+  const res = await fetch(`/api/capas?mineId=${MINE_ID}`);
   if (!res.ok) throw new Error('Failed to fetch CAPAs');
   const data = await res.json();
   if (id) {
@@ -57,7 +56,7 @@ export async function getCapaDetail(id) {
 }
 
 export async function getTodayInspectionPlan() {
-  const res = await apiFetch(`/api/mine?mineId=${MINE_ID}`);
+  const res = await fetch(`/api/mine?mineId=${MINE_ID}`);
   if (!res.ok) return { sections: [] };
   const data = await res.json();
   return {

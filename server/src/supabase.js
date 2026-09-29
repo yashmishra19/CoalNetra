@@ -5,30 +5,16 @@ dotenv.config();
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   console.error('SUPABASE_URL and SUPABASE_ANON_KEY must be set in server/.env');
 }
 
-/**
- * Anon client — used only for auth.signInWithPassword().
- * All other queries go through createUserClient() so RLS is enforced.
- */
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: { autoRefreshToken: false, persistSession: false },
-});
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-/**
- * Returns a Supabase client authenticated as the logged-in user.
- * Passes the user's JWT so Postgres RLS sees auth.uid() correctly.
- *
- * @param {string} accessToken  — the JWT from supabase.auth.signInWithPassword
- */
-export function createUserClient(accessToken) {
-  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+export const supabaseAdmin = SUPABASE_SERVICE_ROLE_KEY
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
-    global: {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    },
-  });
-}
+  })
+  : null;

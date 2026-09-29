@@ -16,11 +16,9 @@ export default function Login() {
   // If already logged in, redirect
   useEffect(() => {
     if (!authLoading && user) {
-      const role = (user.role || '').toLowerCase();
-      if (role === 'mine_manager') navigate('/', { replace: true });
-      else if (role === 'regulator') navigate('/regulator', { replace: true });
-      else if (role === 'field_officer') navigate('/', { replace: true });
-      else if (role === 'both') navigate('/select-role', { replace: true });
+      if (user.role === 'mine_manager') navigate('/', { replace: true });
+      else if (user.role === 'regulator') navigate('/regulator', { replace: true });
+      else if (user.role === 'both') navigate('/select-role', { replace: true });
     }
   }, [user, authLoading, navigate]);
 
@@ -30,12 +28,9 @@ export default function Login() {
     setSubmitting(false);
 
     if (result) {
-      const role = (result.role || '').toLowerCase();
-      if (role === 'mine_manager') navigate('/', { replace: true });
-      else if (role === 'regulator') navigate('/regulator', { replace: true });
-      else if (role === 'field_officer') navigate('/', { replace: true });
-      else if (role === 'both') navigate('/select-role', { replace: true });
-      else navigate('/', { replace: true });
+      if (result.role === 'mine_manager') navigate('/', { replace: true });
+      else if (result.role === 'regulator') navigate('/regulator', { replace: true });
+      else if (result.role === 'both') navigate('/select-role', { replace: true });
     }
   };
 
@@ -138,8 +133,9 @@ export default function Login() {
           <button
             onClick={() => handleLogin()}
             disabled={submitting}
-            className={`mt-6 w-full bg-brand-primary text-white font-semibold rounded-lg py-3.5 text-[15px] hover:bg-brand-dark active:scale-[0.98] transition-all cursor-pointer ${submitting ? 'opacity-60 cursor-not-allowed' : ''
-              }`}
+            className={`mt-6 w-full bg-brand-primary text-white font-semibold rounded-lg py-3.5 text-[15px] hover:bg-brand-dark active:scale-[0.98] transition-all cursor-pointer ${
+              submitting ? 'opacity-60 cursor-not-allowed' : ''
+            }`}
           >
             {submitting ? (
               <span className="flex items-center justify-center gap-2">
@@ -159,38 +155,24 @@ export default function Login() {
           </div>
 
           {/* Quick Access Buttons */}
-          <div className="mt-6 p-4 bg-page-bg border border-page-border rounded-lg">
-            <p className="text-[12px] text-status-neutral text-center mb-3">Demo accounts — click to sign in</p>
-            <div className="flex flex-col gap-2">
+          <div className="mt-6 text-center">
+            <p className="text-[13px] text-status-neutral mb-3">Quick demo access</p>
+            <div className="flex flex-col sm:flex-row gap-3">
               <button
-                type="button"
-                onClick={() => handleQuickAccess('minemanager@koylanetra.test', 'MineManager123!')}
-                disabled={submitting}
-                className="flex items-center gap-2 text-left text-[13px] text-brand-primary bg-white border border-page-border rounded-lg px-3 py-2 hover:border-status-warning hover:bg-status-warning/5 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => handleQuickAccess('mahato@coalgov.in', 'mine123')}
+                className="flex-1 border border-page-border rounded-lg py-3 text-[14px] font-medium text-brand-primary hover:bg-page-bg transition cursor-pointer flex flex-col items-center gap-1.5"
               >
-                <HardHat size={14} className="text-status-warning flex-shrink-0" />
-                <span className="font-medium">Mine Manager</span>
-                <span className="text-status-neutral text-[12px] ml-auto">minemanager@koylanetra.test</span>
+                <HardHat size={22} className="text-status-warning" />
+                <span>Mine Manager</span>
+                <span className="text-[12px] text-status-neutral">R. Mahato</span>
               </button>
               <button
-                type="button"
-                onClick={() => handleQuickAccess('regulator@koylanetra.test', 'Regulator123!')}
-                disabled={submitting}
-                className="flex items-center gap-2 text-left text-[13px] text-brand-primary bg-white border border-page-border rounded-lg px-3 py-2 hover:border-status-info hover:bg-status-info/5 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => handleQuickAccess('kulkarni@dgms.gov.in', 'dgms123')}
+                className="flex-1 border border-page-border rounded-lg py-3 text-[14px] font-medium text-brand-primary hover:bg-page-bg transition cursor-pointer flex flex-col items-center gap-1.5"
               >
-                <Shield size={14} className="text-status-info flex-shrink-0" />
-                <span className="font-medium">Regulator</span>
-                <span className="text-status-neutral text-[12px] ml-auto">regulator@koylanetra.test</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickAccess('fieldofficer@koylanetra.test', 'FieldOfficer123!')}
-                disabled={submitting}
-                className="flex items-center gap-2 text-left text-[13px] text-brand-primary bg-white border border-page-border rounded-lg px-3 py-2 hover:border-status-critical hover:bg-status-critical/5 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <HardHat size={14} className="text-status-critical flex-shrink-0" />
-                <span className="font-medium">Field Officer</span>
-                <span className="text-status-neutral text-[12px] ml-auto">fieldofficer@koylanetra.test</span>
+                <Shield size={22} className="text-status-info" />
+                <span>DGMS Regulator</span>
+                <span className="text-[12px] text-status-neutral">P.B. Kulkarni</span>
               </button>
             </div>
           </div>

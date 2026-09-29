@@ -4,15 +4,14 @@
  */
 
 import { mockComplianceData } from '../data/mockCompliance';
-import { apiFetch } from './apiFetch';
 
 const MINE_ID = '55555555-5555-5555-5555-555555555501';
 
 export async function getComplianceOverview() {
   try {
     const [oblRes, dirRes] = await Promise.all([
-      apiFetch(`/api/obligations?mineId=${MINE_ID}`),
-      apiFetch(`/api/directions`),
+      fetch(`/api/obligations?mineId=${MINE_ID}`),
+      fetch(`/api/directions`),
     ]);
     if (!oblRes.ok) throw new Error('Failed to fetch obligations');
     const obligationsData = await oblRes.json();
@@ -35,7 +34,7 @@ export async function getObligations(filter = 'all') {
   try {
     let url = `/api/obligations?mineId=${MINE_ID}`;
     if (filter && filter !== 'all') url += `&status=${filter.toUpperCase()}`;
-    const res = await apiFetch(url);
+    const res = await fetch(url);
     if (!res.ok) throw new Error('Failed to fetch obligations');
     const data = await res.json();
     return data.obligations;
@@ -57,7 +56,7 @@ export async function getLicencesAndClearances() {
 }
 
 export async function getRegulatorDirections() {
-  const res = await apiFetch('/api/directions');
+  const res = await fetch('/api/directions');
   if (!res.ok) return [];
   const data = await res.json();
   return data.directions;

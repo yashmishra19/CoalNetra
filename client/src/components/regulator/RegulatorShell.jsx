@@ -41,7 +41,7 @@ export default function RegulatorShell() {
 
       {/* SIDEBAR (Dark Navy Theme #1A2332) */}
       <aside
-        className={`fixed top-0 left-0 h-screen w-[240px] bg-[#1A2332] text-slate-300 flex flex-col z-30 overflow-y-auto transition-transform duration-300 ease-in-out shadow-xl border-r border-[#26334A]/50 ${
+        className={`fixed top-0 left-0 h-screen w-[220px] bg-[#1A2332] text-slate-300 flex flex-col z-30 overflow-y-auto transition-transform duration-300 ease-in-out shadow-xl border-r border-[#26334A]/50 ${
           isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
       >
@@ -75,7 +75,7 @@ export default function RegulatorShell() {
           <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-400">
             Your jurisdiction
           </div>
-          <div className="text-[14px] font-semibold text-white mt-1">
+          <div className="text-[14px] font-semibold text-white mt-1 truncate">
             Nagpur Region-2
           </div>
           <div className="text-[12px] text-slate-300 mt-0.5 leading-snug">
@@ -84,7 +84,7 @@ export default function RegulatorShell() {
         </div>
 
         {/* Nav List */}
-        <nav className="mt-5 flex-1 space-y-1 px-3">
+        <nav className="mt-5 flex-1 space-y-1 px-2">
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -94,21 +94,21 @@ export default function RegulatorShell() {
                 end={item.end}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className={({ isActive }) =>
-                  `w-full flex items-center justify-between px-3 h-10 text-[14px] transition-colors cursor-pointer rounded-md ${
+                  `w-full flex items-center justify-between px-5 h-11 text-[14px] transition-colors cursor-pointer rounded-md ${
                     isActive
-                      ? 'font-semibold text-white bg-[#26334A] border-l-4 border-l-blue-500 shadow-sm'
+                      ? 'font-semibold text-white bg-[#26334A] border-l-[3px] border-l-blue-500 shadow-sm'
                       : 'text-slate-300 hover:text-white hover:bg-[#202B3D]'
                   }`
                 }
               >
                 {({ isActive }) => (
                   <>
-                    <div className="flex items-center gap-3">
-                      <Icon size={17} className={isActive ? 'text-white' : 'text-slate-400'} />
-                      <span>{item.label}</span>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Icon size={18} className={`shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                      <span className="truncate">{item.label}</span>
                     </div>
                     {item.count !== null && (
-                      <span className={`min-w-[20px] h-[20px] px-1.5 rounded-full flex items-center justify-center text-[11px] font-bold text-white ${
+                      <span className={`min-w-[20px] h-[20px] px-1.5 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0 ${
                         item.tone === 'warning' ? 'bg-[#D97706]' : 'bg-[#E5484D]'
                       } ml-auto`}>
                         {item.count}
@@ -124,17 +124,17 @@ export default function RegulatorShell() {
         {/* Footer / User Info */}
         <div className="mt-auto border-t border-[#26334A] px-5 py-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-teal-700 text-white text-[13px] font-semibold flex items-center justify-center flex-shrink-0">
+            <div className="w-9 h-9 rounded-full bg-teal-700 text-white text-[13px] font-semibold flex items-center justify-center shrink-0">
               PK
             </div>
             <div className="min-w-0">
-              <div className="text-[14px] font-medium text-white">P.B. Kulkarni</div>
-              <div className="text-[12px] text-slate-400 leading-tight mt-0.5">Director of Mines Safety</div>
+              <div className="text-[14px] font-medium text-white truncate">P.B. Kulkarni</div>
+              <div className="text-[12px] text-slate-400 leading-tight mt-0.5 truncate">Director of Mines Safety</div>
             </div>
           </div>
           <button
             onClick={logout}
-            className="text-[11px] text-slate-500 hover:text-slate-300 cursor-pointer transition mt-2 text-left block"
+            className="text-[11px] text-slate-400 hover:text-slate-200 cursor-pointer transition mt-2 text-left block"
           >
             Sign out
           </button>
@@ -142,9 +142,9 @@ export default function RegulatorShell() {
       </aside>
 
       {/* MAIN CONTENT AREA (Kept light background) */}
-      <div className="md:ml-[240px] min-h-screen bg-page-bg flex flex-col">
+      <div className="md:ml-[220px] min-h-screen bg-page-bg flex flex-col">
         {/* TOPBAR */}
-        <header className="px-6 pt-5">
+        <header className="px-6 py-3.5">
           {/* Filter Row */}
           <div className="flex items-center justify-between flex-wrap gap-3">
             {/* Left controls */}
@@ -160,7 +160,7 @@ export default function RegulatorShell() {
               {['All India', 'Nagpur Region-2', 'Chandrapur', 'Calendar 2026'].map((filterVal) => (
                 <button
                   key={filterVal}
-                  className="bg-white border border-page-border rounded px-3 py-1.5 text-[13px] text-brand-primary font-medium inline-flex items-center gap-1.5 cursor-pointer hover:border-status-neutral transition"
+                  className="bg-white border border-page-border rounded-lg px-3 py-1.5 text-[13px] text-brand-primary font-medium inline-flex items-center gap-1.5 cursor-pointer hover:border-status-neutral transition"
                 >
                   <span>{filterVal}</span>
                   <ChevronDown size={13} className="text-status-neutral" />
@@ -177,7 +177,7 @@ export default function RegulatorShell() {
               </div>
 
               {/* Language Toggle */}
-              <div className="inline-flex rounded overflow-hidden border border-page-border">
+              <div className="inline-flex rounded-lg overflow-hidden border border-page-border">
                 <button className="bg-brand-primary text-white px-3 py-1.5 text-[12px] font-medium">
                   English
                 </button>
@@ -187,7 +187,7 @@ export default function RegulatorShell() {
               </div>
 
               {/* Bell Notification */}
-              <button className="relative p-1.5 rounded hover:bg-white transition" aria-label="Notifications">
+              <button className="relative p-1.5 text-status-neutral hover:bg-white rounded transition" aria-label="Notifications">
                 <Bell size={18} className="text-status-neutral" />
                 <span className="w-2.5 h-2.5 bg-status-critical rounded-full absolute -top-0.5 -right-0.5 border-2 border-white" />
               </button>
@@ -205,10 +205,10 @@ export default function RegulatorShell() {
               </p>
             </div>
             <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap w-full sm:w-auto">
-              <button className="border border-page-border rounded-lg px-4 py-2 text-[13px] font-medium text-brand-primary hover:bg-page-bg transition text-center w-full sm:w-auto">
+              <button className="border border-page-border rounded-lg px-4 py-2.5 text-[13px] font-medium text-brand-primary hover:bg-page-bg transition text-center w-full sm:w-auto">
                 Monthly return to Zone
               </button>
-              <button className="bg-brand-primary text-white rounded-lg px-4 py-2 text-[13px] font-semibold hover:bg-brand-dark transition text-center w-full sm:w-auto">
+              <button className="bg-brand-primary text-white rounded-lg px-4 py-2.5 text-[13px] font-semibold hover:bg-brand-dark transition text-center w-full sm:w-auto">
                 Plan next month's inspections
               </button>
             </div>
@@ -223,3 +223,4 @@ export default function RegulatorShell() {
     </div>
   );
 }
+
