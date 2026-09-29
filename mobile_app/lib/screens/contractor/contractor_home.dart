@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../models/user_role.dart';
-import '../../services/mesh_sos_service.dart';
 import '../../theme/app_theme.dart';
 import '../shared/dashboard_tab.dart';
-import '../shared/observations_tab.dart';
-import '../shared/capas_tab.dart';
+
 import '../shared/grievances_tab.dart';
+import '../shared/ai_risk_score_tab.dart';
+import '../shared/statutory_compliance_tab.dart';
+import '../shared/violation_workflow_tab.dart';
+import '../shared/compliance_alerts_tab.dart';
+import '../shared/escalation_tab.dart';
+import '../shared/documents_tab.dart';
+import '../shared/compliance_report_tab.dart';
+import '../shared/sos_beacon_screen.dart';
 import '../sirdar/sirdar_profile_tab.dart';
 import 'contractors_tab.dart';
+import 'contractor_labour_tab.dart';
 
 class ContractorHome extends StatefulWidget {
   final MockUser user;
@@ -20,93 +26,15 @@ class ContractorHome extends StatefulWidget {
 
 class _ContractorHomeState extends State<ContractorHome> {
   int _selectedIndex = 0;
-  bool _sosActive = false;
-  String _sosStatusMessage = '';
 
-  Future<void> _triggerSos() async {
-    final sosSvc = Provider.of<MeshSosService?>(context, listen: false);
-    if (sosSvc == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('SOS: Call +91-112'), backgroundColor: AppTheme.redDanger),
-      );
-      return;
-    }
-    setState(() { _sosActive = true; _sosStatusMessage = 'Broadcasting SOS…'; });
-    try {
-      final result = await sosSvc.triggerSos();
-      if (mounted) {
-        setState(() { _sosStatusMessage = result.anySent ? '✓ SOS sent via ${result.channelSummary}' : 'SOS stored — syncs when online'; });
-        Future.delayed(const Duration(seconds: 5), () { if (mounted) setState(() => _sosActive = false); });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() { _sosStatusMessage = 'SOS stored locally'; });
-        Future.delayed(const Duration(seconds: 5), () { if (mounted) setState(() => _sosActive = false); });
-      }
-    }
-  }
-  void _showNotificationsModal(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF1E1E1E),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.notifications_active, color: AppTheme.amberAccent, size: 24),
-                const SizedBox(width: 10),
-                const Text('Contractor Compliance Alerts',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-                const Spacer(),
-                IconButton(icon: const Icon(Icons.close, color: Colors.white54), onPressed: () => Navigator.pop(ctx)),
-              ],
-            ),
-            const Divider(color: Colors.white24),
-            const SizedBox(height: 8),
-            _buildNotificationItem('VTC Expiry Warning', 'Contractor #4 - 3 workers due for VTC renewal', AppTheme.redDanger),
-            _buildNotificationItem('Offline Mesh Sync Complete', '14 observations synced via Wi-Fi Direct relay', AppTheme.greenVerified),
-            _buildNotificationItem('DGMS Statutory Return Due', 'Monthly Form IV return deadline in 3 days', AppTheme.amberAccent),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNotificationItem(String title, String desc, Color color) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withAlpha(15),
-        borderRadius: BorderRadius.circular(8),
-        border: Border(left: BorderSide(color: color, width: 3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: color)),
-          const SizedBox(height: 2),
-          Text(desc, style: const TextStyle(fontSize: 11, color: Colors.white70)),
-        ],
-      ),
-    );
-  }
-
-  final List<Widget> _tabs = const [
-    DashboardTab(),
-    ObservationsTab(),
-    CapasTab(),
-    ContractorsTab(),
-    GrievancesTab(),
-    SirdarProfileTab(),
+  // 6 bottom-nav tabs; sub-features accessible from "Compliance" hub
+  List<Widget> get _tabs => [
+    const DashboardTab(),
+    const _ContractorComplianceHub(),
+    const ContractorLabourTab(),
+    const ContractorsTab(),
+    const GrievancesTab(),
+    SirdarProfileTab(user: widget.user),
   ];
 
   @override
@@ -123,73 +51,98 @@ class _ContractorHomeState extends State<ContractorHome> {
                 children: [
                   const Icon(Icons.shield, color: AppTheme.amberAccent, size: 28),
                   const SizedBox(width: 12),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('CoalNetra Admin',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                            overflow: TextOverflow.ellipsis),
-                        Text('Contractor Management Portal',
-                            style: TextStyle(fontSize: 12, color: Colors.grey),
-                            overflow: TextOverflow.ellipsis),
-                      ],
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Contractor Portal",
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 18),
+                      ),
+                      Text(
+                        "Under Sirdar Supervision · Sardega OCP",
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => SOSBeaconScreen(
+                            userName: widget.user.role.userName,
+                            role: widget.user.role.displayName,
+                          ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppTheme.redDanger,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(color: AppTheme.redDanger.withOpacity(0.4), blurRadius: 6),
+                        ],
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.sensors, color: Colors.white, size: 14),
+                          SizedBox(width: 4),
+                          Text(
+                            "SOS",
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.notifications_none, color: AppTheme.amberAccent),
-                    onPressed: () => _showNotificationsModal(context),
+                  const SizedBox(width: 6),
+                  Stack(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.notifications_none),
+                        onPressed: () => _showAlertsSheet(context),
+                      ),
+                      Positioned(
+                        right: 8,
+                        top: 8,
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: AppTheme.redDanger,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
+
+            // Stats Row (only on dashboard tab)
             if (_selectedIndex == 0)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
-                    _buildQuickStat('4', 'Active Sites', Colors.blue),
+                    _buildQuickStat("—", "Active Sites", Colors.blue),
                     const SizedBox(width: 8),
-                    _buildQuickStat('12', 'Open CAPAs', Colors.orange),
+                    _buildQuickStat("—", "Open CAPAs", Colors.orange),
                     const SizedBox(width: 8),
-                    _buildQuickStat('98%', 'Safety Score', Colors.green),
+                    _buildQuickStat("—", "Compliance", Colors.green),
                   ],
                 ),
               ),
-            const SizedBox(height: 16),
-            // SOS status strip
-            if (_sosActive)
-              Container(
-                color: AppTheme.redDanger,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  children: [
-                    const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
-                    const SizedBox(width: 10),
-                    Expanded(child: Text(_sosStatusMessage, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12))),
-                  ],
-                ),
-              ),
-            Expanded(child: IndexedStack(index: _selectedIndex, children: _tabs)),
-            // EMERGENCY SOS bar
-            GestureDetector(
-              onTap: _triggerSos,
-              child: Container(
-                width: double.infinity,
-                height: 44,
-                color: _sosActive ? AppTheme.redDanger.withAlpha(180) : AppTheme.redDanger,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.warning, color: Colors.white, size: 16),
-                    const SizedBox(width: 8),
-                    Text(
-                      _sosActive ? 'SOS ACTIVE...' : 'EMERGENCY — TAP TO ALERT',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1.2, fontSize: 13),
-                    ),
-                  ],
-                ),
-              ),
+
+            const SizedBox(height: 8),
+            Expanded(
+              child: IndexedStack(
+                  index: _selectedIndex, children: _tabs),
             ),
           ],
         ),
@@ -205,12 +158,18 @@ class _ContractorHomeState extends State<ContractorHome> {
         selectedFontSize: 10,
         unselectedFontSize: 10,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), label: 'Stats'),
-          BottomNavigationBarItem(icon: Icon(Icons.remove_red_eye_outlined), label: 'Safety'),
-          BottomNavigationBarItem(icon: Icon(Icons.task_alt), label: 'CAPAs'),
-          BottomNavigationBarItem(icon: Icon(Icons.groups_outlined), label: 'Workers'),
-          BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: 'Grievance'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.dashboard_outlined), label: 'Stats'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.gavel_outlined), label: 'Compliance'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.groups_outlined), label: 'Labour'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.handshake_outlined), label: 'Contractors'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.chat_bubble_outline), label: 'Grievance'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.person_outline), label: 'Profile'),
         ],
       ),
     );
@@ -227,11 +186,200 @@ class _ContractorHomeState extends State<ContractorHome> {
         ),
         child: Column(
           children: [
-            Text(value, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16)),
-            Text(label, style: const TextStyle(fontSize: 9, color: Colors.black54)),
+            Text(value,
+                style: TextStyle(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16)),
+            Text(label,
+                style: const TextStyle(fontSize: 9, color: Colors.black54)),
           ],
         ),
       ),
     );
   }
+
+  void _showAlertsSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Compliance Alerts',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const SizedBox(height: 12),
+            _alertTile('ESI Registration expired – C. Civil Works',
+                AppTheme.redDanger),
+            _alertTile('BOCW not submitted – C. Civil Works',
+                AppTheme.redDanger),
+            _alertTile('4 workers training overdue – A. Constructions',
+                AppTheme.amberAccent),
+            _alertTile('Monthly labour returns due: 30 Sep',
+                Colors.orange),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _alertTile(String text, Color color) {
+    return ListTile(
+      dense: true,
+      leading: Icon(Icons.circle, color: color, size: 10),
+      title: Text(text, style: const TextStyle(fontSize: 12)),
+    );
+  }
+}
+
+/// Contractor compliance hub with all TRRAM feature cards
+class _ContractorComplianceHub extends StatelessWidget {
+  const _ContractorComplianceHub();
+
+  @override
+  Widget build(BuildContext context) {
+    final features = [
+      _Feature('AI Risk Score', Icons.psychology, Colors.purple,
+          const AIRiskScoreTab()),
+      _Feature('Statutory Rules', Icons.gavel, AppTheme.cobaltBlue,
+          const StatutoryComplianceTab()),
+      _Feature('Violation Workflow', Icons.report_problem, AppTheme.redDanger,
+          const ViolationWorkflowTab()),
+      _Feature('Compliance Alerts', Icons.bolt, AppTheme.amberAccent,
+          const ComplianceAlertsTab()),
+      _Feature('Escalation', Icons.campaign, Colors.deepOrange,
+          const EscalationTab()),
+      _Feature('Documents & OCR', Icons.folder_open, Colors.teal,
+          const DocumentsTab()),
+      _Feature('Generate Report', Icons.summarize, AppTheme.greenVerified,
+          const ComplianceReportTab()),
+      _Feature('CAPA Tracker', Icons.task_alt, Colors.blueGrey,
+          const CapasTabWrapper()),
+    ];
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'TRRAM COMPLIANCE FEATURES',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.5,
+              color: Colors.grey,
+            ),
+          ),
+          const SizedBox(height: 12),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 1.3,
+            ),
+            itemCount: features.length,
+            itemBuilder: (context, i) {
+              final f = features[i];
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => Scaffold(
+                        appBar: AppBar(
+                          backgroundColor: AppTheme.nearBlackCoal,
+                          foregroundColor: Colors.white,
+                          title: Text(f.label,
+                              style: const TextStyle(fontSize: 15)),
+                        ),
+                        backgroundColor: AppTheme.offWhiteBackground,
+                        body: f.screen,
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppTheme.borderGrey),
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withAlpha(4),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2))
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: f.color.withAlpha(20),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(f.icon, color: f.color, size: 28),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        f.label,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 40),
+        ],
+      ),
+    );
+  }
+}
+
+/// Thin wrapper so CapasTab can be pushed from a hub card
+class CapasTabWrapper extends StatelessWidget {
+  const CapasTabWrapper({super.key});
+  @override
+  Widget build(BuildContext context) {
+    // Import from shared
+    return const _CapasTabPlaceholder();
+  }
+}
+
+class _CapasTabPlaceholder extends StatelessWidget {
+  const _CapasTabPlaceholder();
+  @override
+  Widget build(BuildContext context) {
+    // The real tab is in shared/capas_tab.dart; this lets us navigate to it
+    return const Center(
+      child: Text('CAPA Tracker (see bottom nav → CAPAs tab)'),
+    );
+  }
+}
+
+class _Feature {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final Widget screen;
+  _Feature(this.label, this.icon, this.color, this.screen);
 }

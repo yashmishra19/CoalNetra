@@ -1,6 +1,4 @@
-import 'dart:async';
 import 'dart:convert';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:http/http.dart' as http;
 import '../database/database.dart';
 
@@ -15,202 +13,136 @@ class SyncService {
   SyncService(this.database);
 
   final AppDatabase database;
-  
-  static String? serverUrlOverride;
+  bool _syncInProgress = false;
+  int _failureCount = 0;
+  DateTime? _retryAfter;
+  static const apiBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://10.0.2.2:5000',
+  );
 
-  static String get effectiveApiBaseUrl {
-    if (serverUrlOverride != null && serverUrlOverride!.isNotEmpty) {
-      return serverUrlOverride!;
+  Future<SyncResult> sync({bool force = false}) async {
+    if (force) _retryAfter = null;
+    final retryAfter = _retryAfter;
+    if (retryAfter != null && DateTime.now().isBefore(retryAfter)) {
+      return SyncResult(pushed: 0, serverTime: DateTime.now().toUtc());
     }
-    return const String.fromEnvironment(
-      'API_BASE_URL',
-      defaultValue: 'http://10.0.2.2:5000',
-    );
-  }
-
-  // Prevents concurrent sync attempts
-  bool _isSyncing = false;
-
-  Future<SyncResult> sync() async {
-    if (_isSyncing) {
+    if (_syncInProgress) {
       return SyncResult(pushed: 0, serverTime: DateTime.now().toUtc());
     }
 
-    // Check network first — don't even attempt on no connectivity
-    final connectivityResult = await Connectivity().checkConnectivity();
-    if (connectivityResult.contains(ConnectivityResult.none)) {
-      return SyncResult(pushed: 0, serverTime: DateTime.now().toUtc());
-    }
-
-    _isSyncing = true;
+    _syncInProgress = true;
     try {
-      final result = await _syncWithRetry();
-      _isSyncing = false;
+      final result = await _syncPendingRecords();
+      _failureCount = 0;
+      _retryAfter = null;
       return result;
-    } catch (e) {
-      _isSyncing = false;
+    } catch (_) {
+      _failureCount++;
+      final delaySeconds = _failureCount >= 7
+          ? 900
+          : 15 * (1 << (_failureCount - 1));
+      _retryAfter = DateTime.now().add(Duration(seconds: delaySeconds));
       rethrow;
+    } finally {
+      _syncInProgress = false;
     }
   }
 
-  /// Exponential backoff: tries 3 times — immediately, after 5s, after 15s
-  Future<SyncResult> _syncWithRetry() async {
-    const delays = [Duration.zero, Duration(seconds: 5), Duration(seconds: 15)];
-    Exception? lastError;
-
-    for (int attempt = 0; attempt < delays.length; attempt++) {
-      if (attempt > 0) {
-        await Future.delayed(delays[attempt]);
-        // Re-check connectivity before retry
-        final conn = await Connectivity().checkConnectivity();
-        if (conn.contains(ConnectivityResult.none)) {
-          throw Exception('Network unavailable after retry');
-        }
-      }
-      try {
-        return await _doSync();
-      } on Exception catch (e) {
-        lastError = e;
-        // Only retry on network errors, not on DB errors
-      }
-    }
-    throw lastError ?? Exception('Sync failed after 3 attempts');
-  }
-
-  Future<SyncResult> _doSync() async {
+  Future<SyncResult> _syncPendingRecords() async {
     final observations = await database.getPendingObservations();
     final grievances = await database.getPendingGrievances();
-    final locationPings = await database.getPendingLocationPings();
-    final sosEvents = await database.getPendingSosEvents();
-
-    final bool hasData = observations.isNotEmpty ||
-        grievances.isNotEmpty ||
-        locationPings.isNotEmpty ||
-        sosEvents.isNotEmpty;
-
-    if (!hasData) {
+    final obligations = await database.getPendingObligationUpdates();
+    final sosSignals = await database.getPendingSosSignals();
+    if (observations.isEmpty &&
+        grievances.isEmpty &&
+        obligations.isEmpty &&
+        sosSignals.isEmpty) {
       return SyncResult(pushed: 0, serverTime: DateTime.now().toUtc());
     }
 
-    // Build payload — chunk large observation/grievance lists to keep
-    // request size small on 3G (each chunk max 20 records)
-    final obsChunks = _chunk(observations, 20);
-    final grvChunks = _chunk(grievances, 20);
-
-    int totalMarked = 0;
-    DateTime serverTime = DateTime.now().toUtc();
-
-    // Send location pings + SOS in first request
-    if (locationPings.isNotEmpty || sosEvents.isNotEmpty) {
-      final res = await _post({
-        'observations': [],
-        'grievances': [],
-        'locationPings': locationPings.map((p) => {
-          'clientUuid': p.clientUuid,
-          'role': p.role,
-          'reportedBy': p.reportedBy,
-          'lat': p.lat,
-          'lng': p.lng,
-          'accuracy': p.accuracy,
-          'locationConfidence': p.locationConfidence,
-          'capturedAt': p.capturedAt.toUtc().toIso8601String(),
-        }).toList(),
-        'sosEvents': sosEvents.map((s) => {
-          'clientUuid': s.clientUuid,
-          'triggeredBy': s.triggeredBy,
-          'role': s.role,
-          'lat': s.lat,
-          'lng': s.lng,
-          'locationConfidence': s.locationConfidence,
-          'sentViaChannel': s.sentViaChannel,
-          'meshRelayedBy': s.meshRelayedBy,
-          'triggeredAt': s.triggeredAt.toUtc().toIso8601String(),
-        }).toList(),
-      });
-
-      final accepted = res['accepted'] as Map<String, dynamic>;
-      serverTime = DateTime.parse(res['serverTime'] as String);
-
-      for (final item in (accepted['locationPings'] as List<dynamic>? ?? [])) {
-        await database.markLocationPingSynced(item['client_uuid'] as String);
-        totalMarked++;
-      }
-      for (final item in (accepted['sosEvents'] as List<dynamic>? ?? [])) {
-        await database.markSosEventSynced(item['client_uuid'] as String);
-        totalMarked++;
-      }
-    }
-
-    // Send observations in chunks
-    final allObsChunks = obsChunks.isEmpty ? [[]] : obsChunks;
-    final allGrvChunks = grvChunks.isEmpty ? [[]] : grvChunks;
-
-    final maxChunks = [allObsChunks.length, allGrvChunks.length].reduce((a, b) => a > b ? a : b);
-    for (int i = 0; i < maxChunks; i++) {
-      final obsSlice = i < allObsChunks.length ? allObsChunks[i] : [];
-      final grvSlice = i < allGrvChunks.length ? allGrvChunks[i] : [];
-
-      if (obsSlice.isEmpty && grvSlice.isEmpty) continue;
-
-      final res = await _post({
-        'observations': obsSlice.map((item) => {
-          'clientUuid': item.clientUuid,
-          'category': item.category,
-          'location': item.location,
-          'trustScore': item.trustScore,
-          'severity': 'MEDIUM',
-          'description': item.category,
-          'clientCreatedAt': DateTime.now().toUtc().toIso8601String(),
-        }).toList(),
-        'grievances': grvSlice.map((item) => {
-          'clientUuid': item.clientUuid,
-          'isAnonymous': item.isAnonymous,
-          'lang': item.lang,
-          'rawText': item.rawText,
-          'createdAt': item.createdAt.toUtc().toIso8601String(),
-        }).toList(),
-        'locationPings': [],
-        'sosEvents': [],
-      });
-
-      final accepted = res['accepted'] as Map<String, dynamic>;
-      serverTime = DateTime.parse(res['serverTime'] as String);
-
-      for (final item in (accepted['observations'] as List<dynamic>? ?? [])) {
-        await database.markObservationSynced(item['client_uuid'] as String);
-        totalMarked++;
-      }
-      for (final item in (accepted['grievances'] as List<dynamic>? ?? [])) {
-        await database.markGrievanceSynced(item['client_uuid'] as String);
-        totalMarked++;
-      }
-    }
-
-    return SyncResult(pushed: totalMarked, serverTime: serverTime);
-  }
-
-  Future<Map<String, dynamic>> _post(Map<String, dynamic> body) async {
-    final baseUrl = effectiveApiBaseUrl;
-    final response = await http.post(
-      Uri.parse('$baseUrl/api/sync/push'),
-      headers: {
-        'content-type': 'application/json',
-        'connection': 'keep-alive',
-      },
-      body: jsonEncode(body),
-    ).timeout(const Duration(seconds: 15));
+    final response = await http
+        .post(
+          Uri.parse('$apiBaseUrl/api/sync/push'),
+          headers: {'content-type': 'application/json'},
+          body: jsonEncode({
+            'observations': observations
+                .map(
+                  (item) => {
+                    'clientUuid': item.clientUuid,
+                    'category': item.category,
+                    'severity': item.severity,
+                    'description': item.description,
+                    'location': item.location,
+                    'trustScore': item.trustScore,
+                    'clientCreatedAt': item.createdAt.toUtc().toIso8601String(),
+                  },
+                )
+                .toList(),
+            'obligations': obligations
+                .map(
+                  (item) => {
+                    'id': item.remoteId,
+                    'status': item.status,
+                    'dueDate': item.dueDate.toUtc().toIso8601String(),
+                  },
+                )
+                .toList(),
+            'grievances': grievances
+                .map(
+                  (item) => {
+                    'clientUuid': item.clientUuid,
+                    'isAnonymous': item.isAnonymous,
+                    'lang': item.lang,
+                    'rawText': item.rawText,
+                    'createdAt': item.createdAt.toUtc().toIso8601String(),
+                  },
+                )
+                .toList(),
+            'sosSignals': sosSignals
+                .map(
+                  (item) => {
+                    'clientUuid': item.clientUuid,
+                    'userName': item.userName,
+                    'role': item.role,
+                    'latitude': item.latitude,
+                    'longitude': item.longitude,
+                    'status': item.status,
+                    'createdAt': item.createdAt.toUtc().toIso8601String(),
+                    'updatedAt': item.updatedAt.toUtc().toIso8601String(),
+                  },
+                )
+                .toList(),
+          }),
+        )
+        .timeout(const Duration(seconds: 8));
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Sync failed (${response.statusCode}): ${response.body}');
+      throw Exception('Sync failed (${response.statusCode})');
     }
-    return jsonDecode(response.body) as Map<String, dynamic>;
-  }
-
-  List<List<T>> _chunk<T>(List<T> list, int size) {
-    final chunks = <List<T>>[];
-    for (int i = 0; i < list.length; i += size) {
-      chunks.add(list.sublist(i, i + size > list.length ? list.length : i + size));
+    final payload = jsonDecode(response.body) as Map<String, dynamic>;
+    final accepted = payload['accepted'] as Map<String, dynamic>;
+    for (final item
+        in (accepted['observations'] as List<dynamic>? ?? const [])) {
+      await database.markObservationSynced(item['client_uuid'] as String);
     }
-    return chunks;
+    for (final item in (accepted['grievances'] as List<dynamic>? ?? const [])) {
+      await database.markGrievanceSynced(item['client_uuid'] as String);
+    }
+    for (final item
+        in (accepted['obligations'] as List<dynamic>? ?? const [])) {
+      await database.markObligationSynced(item['id'] as String);
+    }
+    for (final item in (accepted['sosSignals'] as List<dynamic>? ?? const [])) {
+      await database.markSosSignalSynced(item['client_uuid'] as String);
+    }
+    return SyncResult(
+      pushed:
+          (accepted['observations'] as List<dynamic>? ?? const []).length +
+          (accepted['grievances'] as List<dynamic>? ?? const []).length +
+          (accepted['obligations'] as List<dynamic>? ?? const []).length +
+          (accepted['sosSignals'] as List<dynamic>? ?? const []).length,
+      serverTime: DateTime.parse(payload['serverTime'] as String),
+    );
   }
 }

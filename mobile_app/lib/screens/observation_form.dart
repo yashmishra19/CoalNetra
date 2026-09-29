@@ -18,6 +18,7 @@ class _ObservationFormScreenState extends State<ObservationFormScreen> {
   final _formKey = GlobalKey<FormState>();
   late String _category;
   String _severity = 'Medium';
+  String _description = '';
   Position? _currentPosition;
   bool _isQrScan = false;
   bool _isSaving = false;
@@ -28,11 +29,6 @@ class _ObservationFormScreenState extends State<ObservationFormScreen> {
     'Incident',
     'Statutory Reading',
     'CAPA Closure',
-    'PPE Compliance Checklist',
-    'Gas Level Audit (DGMS)',
-    'Strata Control Inspection',
-    'Haulage Track Safety Check',
-    'Air Flow Measurement',
   ];
 
   final List<String> _severities = ['Low', 'Medium', 'High', 'Critical'];
@@ -41,9 +37,6 @@ class _ObservationFormScreenState extends State<ObservationFormScreen> {
   void initState() {
     super.initState();
     _category = widget.initialCategory ?? 'Safety Hazard';
-    if (!_categories.contains(_category)) {
-      _categories.insert(0, _category);
-    }
     _determinePosition();
   }
 
@@ -66,7 +59,7 @@ class _ObservationFormScreenState extends State<ObservationFormScreen> {
           timeLimit: Duration(seconds: 2),
         ),
       );
-      
+
       if (mounted) {
         setState(() => _currentPosition = position);
       }
@@ -88,48 +81,69 @@ class _ObservationFormScreenState extends State<ObservationFormScreen> {
     }
 
     final uuid = const Uuid().v4();
-    final locString = _isQrScan 
-        ? 'QR-FACE-3A' 
-        : (_currentPosition != null ? '${_currentPosition!.latitude}, ${_currentPosition!.longitude}' : 'Manual Location');
+    final locString = _isQrScan
+        ? 'QR-FACE-3A'
+        : (_currentPosition != null
+              ? '${_currentPosition!.latitude}, ${_currentPosition!.longitude}'
+              : 'Manual Location');
 
     try {
-      await db.addObservation(ObservationsCompanion(
-        orgId: const drift.Value('CIL-SECL-001'),
-        reportedBy: const drift.Value('field_officer_01'),
-        category: drift.Value(_category),
-        location: drift.Value(locString),
-        clientUuid: drift.Value(uuid),
-        trustScore: drift.Value(_currentPosition != null || _isQrScan ? 98.0 : 40.0),
-        syncStatus: const drift.Value(0),
-      ));
+      await db.addObservation(
+        ObservationsCompanion(
+          orgId: const drift.Value('CIL-SECL-001'),
+          reportedBy: const drift.Value('field_officer_01'),
+          category: drift.Value(_category),
+          location: drift.Value(locString),
+          severity: drift.Value(_severity.toUpperCase()),
+          description: drift.Value(_description),
+          createdAt: drift.Value(DateTime.now().toUtc()),
+          clientUuid: drift.Value(uuid),
+          trustScore: drift.Value(
+            _currentPosition != null || _isQrScan ? 98.0 : 40.0,
+          ),
+          syncStatus: const drift.Value(0),
+        ),
+      );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Report submitted to ledger!'), backgroundColor: AppTheme.greenVerified),
+          const SnackBar(
+            content: Text(
+              'Saved on this device. It will sync when the server is reachable.',
+            ),
+            backgroundColor: AppTheme.greenVerified,
+          ),
         );
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isSaving = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Submission failed: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Submission failed: $e')));
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final selectedCategory = _categories.contains(_category) ? _category : _categories.first;
-
     return Scaffold(
       backgroundColor: AppTheme.offWhiteBackground,
       appBar: AppBar(
-        title: Text(_category == 'Statutory Reading' ? 'Statutory Reading' : 'Field Reporting'),
+        title: Text(
+          _category == 'Statutory Reading'
+              ? 'Statutory Reading'
+              : 'Field Reporting',
+        ),
         actions: [
           IconButton(
-            icon: Icon(Icons.qr_code_scanner, color: _isQrScan ? AppTheme.amberAccent : Colors.white),
+            icon: Icon(
+              Icons.qr_code_scanner,
+              color: _isQrScan ? AppTheme.amberAccent : Colors.white,
+            ),
             onPressed: () => setState(() => _isQrScan = !_isQrScan),
-          )
+          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -141,24 +155,46 @@ class _ObservationFormScreenState extends State<ObservationFormScreen> {
             children: [
               _buildLocationStatus(),
               const SizedBox(height: 20),
-              
+
               Row(
                 children: [
                   Expanded(
                     flex: 2,
                     child: DropdownButtonFormField<String>(
-                      value: selectedCategory,
-                      decoration: const InputDecoration(labelText: 'Report Category'),
-                      items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 13)))).toList(),
+                      initialValue: _category,
+                      decoration: const InputDecoration(
+                        labelText: 'Report Category',
+                      ),
+                      items: _categories
+                          .map(
+                            (c) => DropdownMenuItem(
+                              value: c,
+                              child: Text(
+                                c,
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ),
+                          )
+                          .toList(),
                       onChanged: (v) => setState(() => _category = v!),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: _severities.contains(_severity) ? _severity : _severities[1],
+                      initialValue: _severity,
                       decoration: const InputDecoration(labelText: 'Severity'),
-                      items: _severities.map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 13)))).toList(),
+                      items: _severities
+                          .map(
+                            (s) => DropdownMenuItem(
+                              value: s,
+                              child: Text(
+                                s,
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ),
+                          )
+                          .toList(),
                       onChanged: (v) => setState(() => _severity = v!),
                     ),
                   ),
@@ -170,19 +206,31 @@ class _ObservationFormScreenState extends State<ObservationFormScreen> {
                 _buildStatutoryFields(),
               ] else if (_category == 'CAPA Closure') ...[
                 _buildClosureFields(),
-              ] else ...[
-                TextFormField(
-                  decoration: const InputDecoration(labelText: 'Description of Observation', alignLabelWithHint: true),
-                  maxLines: 3,
-                  validator: (v) => (v == null || v.isEmpty) ? 'Description required' : null,
-                ),
               ],
-              
+              TextFormField(
+                decoration: const InputDecoration(
+                  labelText: 'Description / inspection notes',
+                  alignLabelWithHint: true,
+                ),
+                maxLines: 3,
+                onSaved: (value) => _description = value?.trim() ?? '',
+                validator: (value) => (value == null || value.trim().isEmpty)
+                    ? 'Description required'
+                    : null,
+              ),
+
               const SizedBox(height: 24),
-              const Text('EVIDENCE CAPTURE', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
+              const Text(
+                'EVIDENCE CAPTURE',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  color: Colors.grey,
+                ),
+              ),
               const SizedBox(height: 12),
               _buildEvidenceGrid(),
-              
+
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: _isSaving ? null : _saveObservation,
@@ -191,9 +239,15 @@ class _ObservationFormScreenState extends State<ObservationFormScreen> {
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                child: _isSaving 
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text('SUBMIT TO SYSTEM', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                child: _isSaving
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
+                        'SUBMIT TO SYSTEM',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
               ),
             ],
           ),
@@ -207,18 +261,34 @@ class _ObservationFormScreenState extends State<ObservationFormScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: active ? AppTheme.greenVerified.withAlpha(20) : AppTheme.amberAccent.withAlpha(20),
+        color: active
+            ? AppTheme.greenVerified.withAlpha(20)
+            : AppTheme.amberAccent.withAlpha(20),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: active ? AppTheme.greenVerified : AppTheme.amberAccent),
+        border: Border.all(
+          color: active ? AppTheme.greenVerified : AppTheme.amberAccent,
+        ),
       ),
       child: Row(
         children: [
-          Icon(_isQrScan ? Icons.qr_code : Icons.gps_fixed, color: active ? AppTheme.greenVerified : AppTheme.amberAccent, size: 20),
+          Icon(
+            _isQrScan ? Icons.qr_code : Icons.gps_fixed,
+            color: active ? AppTheme.greenVerified : AppTheme.amberAccent,
+            size: 20,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              _isQrScan ? "Location Verified via QR: Face 3A" : (_currentPosition != null ? "GPS Position Locked (Trust: 98%)" : "Acquiring Location..."),
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: active ? AppTheme.greenVerified : AppTheme.amberAccent),
+              _isQrScan
+                  ? "Location Verified via QR: Face 3A"
+                  : (_currentPosition != null
+                        ? "GPS Position Locked (Trust: 98%)"
+                        : "Acquiring Location..."),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                color: active ? AppTheme.greenVerified : AppTheme.amberAccent,
+              ),
             ),
           ),
         ],
@@ -231,17 +301,39 @@ class _ObservationFormScreenState extends State<ObservationFormScreen> {
       children: [
         Row(
           children: [
-            Expanded(child: TextFormField(decoration: const InputDecoration(labelText: 'CH4 %'), keyboardType: TextInputType.number)),
+            Expanded(
+              child: TextFormField(
+                decoration: const InputDecoration(labelText: 'CH4 %'),
+                keyboardType: TextInputType.number,
+              ),
+            ),
             const SizedBox(width: 12),
-            Expanded(child: TextFormField(decoration: const InputDecoration(labelText: 'CO (ppm)'), keyboardType: TextInputType.number)),
+            Expanded(
+              child: TextFormField(
+                decoration: const InputDecoration(labelText: 'CO (ppm)'),
+                keyboardType: TextInputType.number,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: TextFormField(decoration: const InputDecoration(labelText: 'Air Velocity (m/s)'), keyboardType: TextInputType.number)),
+            Expanded(
+              child: TextFormField(
+                decoration: const InputDecoration(
+                  labelText: 'Air Velocity (m/s)',
+                ),
+                keyboardType: TextInputType.number,
+              ),
+            ),
             const SizedBox(width: 12),
-            Expanded(child: TextFormField(decoration: const InputDecoration(labelText: 'Dust (mg/m3)'), keyboardType: TextInputType.number)),
+            Expanded(
+              child: TextFormField(
+                decoration: const InputDecoration(labelText: 'Dust (mg/m3)'),
+                keyboardType: TextInputType.number,
+              ),
+            ),
           ],
         ),
       ],
@@ -255,18 +347,30 @@ class _ObservationFormScreenState extends State<ObservationFormScreen> {
         Container(
           padding: const EdgeInsets.all(12),
           width: double.infinity,
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade300)),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
           child: const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("REF: CAPA-2024-082", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-              Text("Issue: Exposed electrical wiring at Pump House 4", style: TextStyle(fontSize: 12)),
+              Text(
+                "REF: CAPA-2024-082",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+              ),
+              Text(
+                "Issue: Exposed electrical wiring at Pump House 4",
+                style: TextStyle(fontSize: 12),
+              ),
             ],
           ),
         ),
         const SizedBox(height: 16),
         TextFormField(
-          decoration: const InputDecoration(labelText: 'Action Taken / Verification Notes'),
+          decoration: const InputDecoration(
+            labelText: 'Action Taken / Verification Notes',
+          ),
           maxLines: 2,
         ),
       ],
@@ -290,7 +394,11 @@ class _ObservationFormScreenState extends State<ObservationFormScreen> {
 
   Widget _evidenceTile(IconData icon, String label) {
     return Container(
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade200)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
