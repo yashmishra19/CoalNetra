@@ -25,6 +25,7 @@ class PermissionsGateScreen extends StatefulWidget {
 class _PermissionsGateScreenState extends State<PermissionsGateScreen> {
   bool _isRequesting = false;
   String? _errorMessage;
+  bool _hasAutoProceeded = false;
 
   // Store status per index
   final List<PermissionStatus?> _statuses = List.filled(4, null);
@@ -68,7 +69,24 @@ class _PermissionsGateScreenState extends State<PermissionsGateScreen> {
   @override
   void initState() {
     super.initState();
-    _checkCurrentStatuses();
+    _checkAndMaybeAutoProceed();
+  }
+
+  /// Check whether all required permissions (indices 0, 1, 2) are already
+  /// granted. If so, skip the gate entirely and proceed directly.
+  Future<void> _checkAndMaybeAutoProceed() async {
+    await _checkCurrentStatuses();
+    if (!mounted || _hasAutoProceeded) return;
+
+    // Check if all REQUIRED permissions are already granted at OS level
+    final allRequiredGranted = List.generate(4, (i) => i)
+        .where((i) => _required[i])
+        .every((i) => _statuses[i]?.isGranted ?? false);
+
+    if (allRequiredGranted) {
+      _hasAutoProceeded = true;
+      await _proceed();
+    }
   }
 
   Future<PermissionStatus> _checkSinglePermission(int i) async {

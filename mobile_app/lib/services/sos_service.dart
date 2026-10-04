@@ -179,34 +179,55 @@ class SOSService extends ChangeNotifier {
   }
 
   Future<void> _startAdvertising() async {
-    if (!_advertisingPermissionGranted) {
-      final permission = await _peripheral.requestPermission();
-      if (permission != PeripheralBluetoothState.ready &&
-          permission != PeripheralBluetoothState.granted) {
-        _bleError =
-            'Bluetooth advertising permission or adapter is unavailable.';
-        notifyListeners();
-        return;
-      }
-      _advertisingPermissionGranted = true;
-    }
-    final payload = _encodeBeacon(
-      active: _isSOSActive,
-      id: _activeSignalId ?? '',
-      position: _currentPosition,
-    );
     try {
-      await _peripheral.start(
-        advertiseData: Platform.isAndroid
-            ? AndroidAdvertiseData(
-                serviceDataUuid: sosServiceUuid,
-                serviceData: payload,
-              )
-            : AdvertiseDataCore(serviceUuid: sosServiceUuid),
+      // Stop any stale advertising session first to prevent stacked sessions
+      try {
+        await _peripheral.stop();
+      } catch (_) {}
+
+      if (!_advertisingPermissionGranted) {
+        PeripheralBluetoothState permission;
+        try {
+          permission = await _peripheral.requestPermission();
+        } catch (e) {
+          // Platform-level crash (e.g. BT adapter not initialized, NPE in plugin)
+          _bleError = 'Bluetooth adapter unavailable: $e';
+          _bleAvailable = false;
+          notifyListeners();
+          return;
+        }
+        if (permission != PeripheralBluetoothState.ready &&
+            permission != PeripheralBluetoothState.granted) {
+          _bleError =
+              'Bluetooth advertising permission or adapter is unavailable.';
+          notifyListeners();
+          return;
+        }
+        _advertisingPermissionGranted = true;
+      }
+      final payload = _encodeBeacon(
+        active: _isSOSActive,
+        id: _activeSignalId ?? '',
+        position: _currentPosition,
       );
-      _bleError = null;
-    } catch (error) {
-      _bleError = 'Bluetooth SOS advertising failed: $error';
+      try {
+        await _peripheral.start(
+          advertiseData: Platform.isAndroid
+              ? AndroidAdvertiseData(
+                  serviceDataUuid: sosServiceUuid,
+                  serviceData: payload,
+                )
+              : AdvertiseDataCore(serviceUuid: sosServiceUuid),
+        );
+        _bleError = null;
+      } catch (error) {
+        _bleError = 'Bluetooth SOS advertising failed: $error';
+      }
+    } catch (e) {
+      // Catch-all for any platform-level exception (NullPointerException, etc.)
+      _bleError = 'BLE peripheral error: $e';
+      _advertisingPermissionGranted = false;
+      debugPrint('BLE _startAdvertising platform crash: $e');
     }
     notifyListeners();
   }

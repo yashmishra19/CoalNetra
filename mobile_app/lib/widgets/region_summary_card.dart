@@ -49,21 +49,27 @@ class RegionSummaryCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.nearBlackCoal,
+              Flexible(
+                child: Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.nearBlackCoal,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               if (subValue != null) ...[
                 const SizedBox(width: 4),
-                Text(
-                  subValue!,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade500,
+                Flexible(
+                  child: Text(
+                    subValue!,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
