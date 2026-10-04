@@ -51,21 +51,27 @@ class _ContractorHomeState extends State<ContractorHome> {
                 children: [
                   const Icon(Icons.shield, color: AppTheme.amberAccent, size: 28),
                   const SizedBox(width: 12),
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Contractor Portal",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 18),
-                      ),
-                      Text(
-                        "Under Sirdar Supervision · Sardega OCP",
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                    ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Contractor Portal",
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 18),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                        Text(
+                          "Under Sirdar Supervision · Sardega OCP",
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ],
+                    ),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 4),
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
@@ -79,7 +85,7 @@ class _ContractorHomeState extends State<ContractorHome> {
                       );
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                       decoration: BoxDecoration(
                         color: AppTheme.redDanger,
                         borderRadius: BorderRadius.circular(20),
@@ -88,6 +94,7 @@ class _ContractorHomeState extends State<ContractorHome> {
                         ],
                       ),
                       child: const Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.sensors, color: Colors.white, size: 14),
                           SizedBox(width: 4),
@@ -99,16 +106,17 @@ class _ContractorHomeState extends State<ContractorHome> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 6),
                   Stack(
                     children: [
                       IconButton(
                         icon: const Icon(Icons.notifications_none),
                         onPressed: () => _showAlertsSheet(context),
+                        padding: const EdgeInsets.all(8),
+                        constraints: const BoxConstraints(),
                       ),
                       Positioned(
-                        right: 8,
-                        top: 8,
+                        right: 4,
+                        top: 4,
                         child: Container(
                           width: 8,
                           height: 8,
